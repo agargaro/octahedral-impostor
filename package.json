@@ -1,5 +1,5 @@
 {
-  "name": "@three.ez/package-name",
+  "name": "@three.ez/octahedron-imposter",
   "version": "0.0.1",
   "description": "",
   "author": "Andrea Gargaro <devgargaro@gmail.com>",
@@ -9,7 +9,7 @@
   "main": "build/index.cjs",
   "types": "src/index.d.ts",
   "homepage": "",
-  "repository": "https://github.com/agargaro/package-name",
+  "repository": "https://github.com/agargaro/octahedron-imposter",
   "exports": {
     ".": {
       "import": {
@@ -25,7 +25,9 @@
   "keywords": [
     "three",
     "three.js",
-    "threejs"
+    "threejs",
+    "imposter",
+    "impostor"
   ],
   "scripts": {
     "start": "vite",
