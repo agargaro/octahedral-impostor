@@ -56,7 +56,7 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
   return renderTarget;
 
   function renderView(gridX: number, gridY: number): void {
-    // coords.set(x + halfSide, y + halfSide);
+    // coords.set(gridX + halfSide, gridY + halfSide);
     coords.set(gridX, gridY);
 
     if (useHemiOctahedron) hemiOctaGridToDir(coords, camera.position);
