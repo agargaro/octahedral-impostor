@@ -1,5 +1,9 @@
-import { Box3, NoColorSpace, Object3D, OrthographicCamera, PerspectiveCamera, Sphere, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
-import { hemiOctahedronGridToDir, octahedronGridToDir } from './mathUtils.js';
+import { Camera, NoColorSpace, Object3D, OrthographicCamera, PerspectiveCamera, Sphere, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { computeBoundingSphereFromObject } from './boundingSphere.js';
+import { hemiOctaGridToDir, octaGridToDir } from './octahedron.js';
+
+// TODO: convert to MeshBasicMaterial
+// TODO: fix empty pixel? (example 2048 / 6 = 341.33 pixel)
 
 type OldRendererData = { oldPixelRatio: number; oldScissorTest: boolean; renderTarget: WebGLRenderTarget };
 
@@ -10,12 +14,11 @@ export interface CreateTextureAtlasParams {
   target: Object3D;
   size?: number;
   countPerSide?: number;
-  cameraDistanceFactor?: number;
+  cameraFactor?: number;
 }
 
 const perspectiveCamera = new PerspectiveCamera();
 const orthographicCamera = new OrthographicCamera();
-const bBox = new Box3();
 const bSphere = new Sphere();
 const oldScissor = new Vector4();
 const oldViewport = new Vector4();
@@ -32,12 +35,12 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
   const size = params.size ?? 2048;
   const countPerSide = params.countPerSide ?? 6;
   const side = 1 / countPerSide;
-  const cameraDistanceFactor = params.cameraDistanceFactor ?? 2;
-  const camera = usePerspectiveCamera ? perspectiveCamera : orthographicCamera;
   const halfSide = side / 2;
 
-  bBox.setFromObject(target);
-  bBox.getBoundingSphere(bSphere);
+  computeBoundingSphereFromObject(target, bSphere);
+
+  const cameraFactor = params.cameraFactor ?? 1;
+  const camera = getCamera();
 
   const { oldPixelRatio, oldScissorTest, renderTarget } = setupRenderer();
 
@@ -54,10 +57,10 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
   function renderView(row: number, col: number): void {
     coord.set(col + halfSide, row + halfSide);
 
-    if (useHemiOctahedron) hemiOctahedronGridToDir(coord, camera.position);
-    else octahedronGridToDir(coord, camera.position);
+    if (useHemiOctahedron) hemiOctaGridToDir(coord, camera.position);
+    else octaGridToDir(coord, camera.position);
 
-    camera.position.setLength(bSphere.radius * cameraDistanceFactor).add(bSphere.center);
+    camera.position.setLength(bSphere.radius * cameraFactor).add(bSphere.center); // TODO ricontrolla
     camera.lookAt(bSphere.center);
 
     const x = col * size;
@@ -66,6 +69,26 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
     renderer.setScissor(x, y, side * size, side * size);
     // TOOD alpha or custom color? renderer.setClearColor(Math.random() * 0xffffff);
     renderer.render(target, camera);
+  }
+
+  function getCamera(): Camera {
+    if (usePerspectiveCamera) {
+      // TODO
+      return perspectiveCamera;
+    }
+
+    orthographicCamera.left = -bSphere.radius;
+    orthographicCamera.right = bSphere.radius;
+    orthographicCamera.top = bSphere.radius;
+    orthographicCamera.bottom = -bSphere.radius;
+
+    orthographicCamera.zoom = cameraFactor;
+    orthographicCamera.near = 0.001; // TODO fix based on bSphere
+    orthographicCamera.far = bSphere.radius * 2;
+
+    orthographicCamera.updateProjectionMatrix();
+
+    return orthographicCamera;
   }
 
   function setupRenderer(): OldRendererData {
