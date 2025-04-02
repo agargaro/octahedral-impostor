@@ -19,7 +19,7 @@ const mesh = gltf.scene;
 
 scene.add(mesh, new HemisphereLight('white', 'gray'));
 
-const countPerSide = 16;
+const countPerSide = 25;
 
 const albedo = createAlbedo({
   renderer: main.renderer,
