@@ -4,23 +4,19 @@
 // const octahedron = new Vector3().copy(direction).divideScalar(sum);
 // console.log({ x: (1 + octahedron.x + octahedron.z) * 0.5, y: (1 + octahedron.z - octahedron.x) * 0.5 });
 
-import { Vector3 } from 'three';
-import { hemiOctaDirToGrid } from '../src/utils/octahedron.js';
+import { Vector2, Vector3 } from 'three';
+import { hemiOctaDirToGrid, hemiOctaGridToDir } from '../src/utils/octahedron.js';
 
-const test = hemiOctaDirToGrid(new Vector3(0, 0, 1));
-console.log(test);
+const dirHalf = hemiOctaGridToDir(new Vector2(0 + 1 / 12, 0 + 1 / 12));
+const dir = hemiOctaGridToDir(new Vector2(0, 0));
 
-const test2 = hemiOctaDirToGrid(new Vector3(0, 0, -1));
-console.log(test2);
+console.log(dir);
+console.log(dirHalf);
 
-const test3 = hemiOctaDirToGrid(new Vector3(1, 0, 0));
-console.log(test3);
+const grid = hemiOctaDirToGrid(dir);
+const mapped = new Vector2(Math.max(0, Math.min(5, (grid.x - (1 / 12)) * 6)), Math.max(0, Math.min(5, (grid.y - (1 / 12)) * 6)));
+console.log(mapped);
 
-const test4 = hemiOctaDirToGrid(new Vector3(-1, 0, 0));
-console.log(test4);
-
-const test5 = hemiOctaDirToGrid(new Vector3(0, 1, 0));
-console.log(test5);
-
-const test6 = hemiOctaDirToGrid(new Vector3(-1, -1, 0));
-console.log(test6);
+const grid2 = hemiOctaDirToGrid(dirHalf);
+const mapped2 = new Vector2(Math.max(0, Math.min(5, (grid2.x - (1 / 12)) * 6)), Math.max(0, Math.min(5, (grid2.y - (1 / 12)) * 6)));
+console.log(mapped2);

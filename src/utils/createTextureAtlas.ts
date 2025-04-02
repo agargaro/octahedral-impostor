@@ -22,7 +22,7 @@ const orthographicCamera = new OrthographicCamera();
 const bSphere = new Sphere();
 const oldScissor = new Vector4();
 const oldViewport = new Vector4();
-const coord = new Vector2();
+const coords = new Vector2();
 
 export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarget {
   const { renderer, target, useHemiOctahedron, usePerspectiveCamera } = params;
@@ -32,10 +32,11 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
   if (useHemiOctahedron == null) throw new Error('"useHemiOctahedron" is mandatory.');
   if (perspectiveCamera == null) throw new Error('"usePerspectiveCamera" is mandatory.');
 
-  const size = params.size ?? 2048;
+  const atlasSize = params.size ?? 2048;
   const countPerSide = params.countPerSide ?? 6;
-  const side = 1 / countPerSide;
-  const halfSide = side / 2;
+  const spriteSize = atlasSize / countPerSide;
+  // const side = 1 / countPerSide;
+  // const halfSide = side / 2;
 
   computeBoundingSphereFromObject(target, bSphere);
 
@@ -46,7 +47,7 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
 
   for (let row = 0; row < countPerSide; row++) {
     for (let col = 0; col < countPerSide; col++) {
-      renderView(row / countPerSide, col / countPerSide);
+      renderView(col / countPerSide, row / countPerSide);
     }
   }
 
@@ -54,19 +55,20 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
 
   return renderTarget;
 
-  function renderView(row: number, col: number): void {
-    coord.set(col + halfSide, row + halfSide);
+  function renderView(gridX: number, gridY: number): void {
+    // coords.set(x + halfSide, y + halfSide);
+    coords.set(gridX, gridY);
 
-    if (useHemiOctahedron) hemiOctaGridToDir(coord, camera.position);
-    else octaGridToDir(coord, camera.position);
+    if (useHemiOctahedron) hemiOctaGridToDir(coords, camera.position);
+    else octaGridToDir(coords, camera.position);
 
     camera.position.setLength(bSphere.radius * cameraFactor).add(bSphere.center); // TODO ricontrolla
     camera.lookAt(bSphere.center);
 
-    const x = col * size;
-    const y = row * size;
-    renderer.setViewport(x, y, side * size, side * size);
-    renderer.setScissor(x, y, side * size, side * size);
+    const xOffset = gridX * atlasSize;
+    const yOffset = gridY * atlasSize;
+    renderer.setViewport(xOffset, yOffset, spriteSize, spriteSize);
+    renderer.setScissor(xOffset, yOffset, spriteSize, spriteSize);
     // TOOD alpha or custom color? renderer.setClearColor(Math.random() * 0xffffff);
     renderer.render(target, camera);
   }
@@ -97,7 +99,7 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
     renderer.getScissor(oldScissor);
     renderer.getViewport(oldViewport);
 
-    const renderTarget = new WebGLRenderTarget(size, size, { colorSpace: NoColorSpace }); // TODO confirm these parameters and reuse same renderTarget
+    const renderTarget = new WebGLRenderTarget(atlasSize, atlasSize, { colorSpace: NoColorSpace }); // TODO confirm these parameters and reuse same renderTarget
     renderer.setRenderTarget(renderTarget);
     renderer.setScissorTest(true);
     renderer.setPixelRatio(1);
