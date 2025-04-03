@@ -11,10 +11,6 @@ controls.maxPolarAngle = Math.PI / 2;
 controls.minPolarAngle = 0.2; // TODO improve if this is 0
 controls.update();
 
-// const geometry = await Asset.load<BufferGeometry>(BufferGeometryLoader, 'https://threejs.org/examples/models/json/suzanne_buffergeometry.json');
-// geometry.computeVertexNormals();
-// const mesh = new Mesh(geometry, new MeshLambertMaterial());
-
 const gltf = await Asset.load<GLTF>(GLTFLoader, 'tree.gltf');
 const mesh = gltf.scene;
 
