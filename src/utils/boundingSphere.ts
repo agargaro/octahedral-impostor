@@ -3,7 +3,7 @@ import { Mesh, Object3D, Sphere } from 'three';
 const sphere = new Sphere();
 
 // Remember to call updateMatrixWorld before if necessary.
-export function computeBoundingSphereFromObject(obj: Object3D, target = new Sphere()): Sphere {
+export function computeBoundingSphereFromObject(obj: Object3D, target = new Sphere(), force = false): Sphere {
   target.makeEmpty();
   traverse(obj);
 
@@ -12,7 +12,7 @@ export function computeBoundingSphereFromObject(obj: Object3D, target = new Sphe
   function traverse(obj: Object3D): void {
     if ((obj as Mesh).isMesh) {
       const geometry = (obj as Mesh).geometry;
-      if (!geometry.boundingSphere) geometry.computeBoundingSphere();
+      if (force || !geometry.boundingSphere) geometry.computeBoundingSphere();
 
       sphere.copy(geometry.boundingSphere).applyMatrix4(obj.matrixWorld);
       target.union(sphere);

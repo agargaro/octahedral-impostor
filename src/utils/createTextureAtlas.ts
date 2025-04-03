@@ -33,12 +33,10 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
   if (perspectiveCamera == null) throw new Error('"usePerspectiveCamera" is mandatory.');
 
   const atlasSize = params.size ?? 2048;
-  const countPerSide = params.countPerSide ?? 6;
+  const countPerSide = params.countPerSide ?? 16;
   const spriteSize = atlasSize / countPerSide;
-  // const side = 1 / countPerSide;
-  // const halfSide = side / 2;
 
-  computeBoundingSphereFromObject(target, bSphere);
+  computeBoundingSphereFromObject(target, bSphere, true); // TODO optiona flag for the last 'true'
 
   const cameraFactor = params.cameraFactor ?? 1;
   const camera = getCamera();
@@ -56,13 +54,12 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
   return renderTarget;
 
   function renderView(gridX: number, gridY: number): void {
-    // coords.set(gridX + halfSide, gridY + halfSide);
     coords.set(gridX, gridY);
 
     if (useHemiOctahedron) hemiOctaGridToDir(coords, camera.position);
     else octaGridToDir(coords, camera.position);
 
-    camera.position.setLength(bSphere.radius * cameraFactor).add(bSphere.center); // TODO ricontrolla
+    camera.position.setLength(bSphere.radius * cameraFactor).add(bSphere.center);
     camera.lookAt(bSphere.center);
 
     const xOffset = gridX * atlasSize;
@@ -85,8 +82,8 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
     orthographicCamera.bottom = -bSphere.radius;
 
     orthographicCamera.zoom = cameraFactor;
-    orthographicCamera.near = 0.001; // TODO fix based on bSphere
-    orthographicCamera.far = bSphere.radius * 2;
+    orthographicCamera.near = 0.001;
+    orthographicCamera.far = bSphere.radius * 2 + 0.001;
 
     orthographicCamera.updateProjectionMatrix();
 

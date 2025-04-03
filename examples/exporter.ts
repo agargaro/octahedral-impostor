@@ -1,6 +1,5 @@
 import { Asset, Main } from '@three.ez/main';
-import { AmbientLight, BufferGeometry, BufferGeometryLoader, Mesh, MeshNormalMaterial } from 'three';
-import { GLTF, GLTFLoader } from 'three/examples/jsm/Addons.js';
+import { BufferGeometry, BufferGeometryLoader, Mesh, MeshNormalMaterial } from 'three';
 import { createAlbedo } from '../src/utils/createTextureAtlas.js';
 import { exportTextureFromRenderTarget } from '../src/utils/exportTexture.js';
 
