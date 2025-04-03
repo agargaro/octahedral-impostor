@@ -1,11 +1,15 @@
-import { Camera, NoColorSpace, Object3D, OrthographicCamera, PerspectiveCamera, Sphere, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { Camera, MeshDepthMaterial, NoColorSpace, Object3D, OrthographicCamera, PerspectiveCamera, Sphere, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { computeBoundingSphereFromObject } from './boundingSphere.js';
 import { hemiOctaGridToDir, octaGridToDir } from './octahedron.js';
 
-// TODO: convert to MeshBasicMaterial
-// TODO: fix empty pixel? (example 2048 / 6 = 341.33 pixel)
+// TODO: convert to MeshBasicMaterial or create custoom shader
+// TODO: fix empty pixel? (example 2048 / 6 = 341.33 pixel) set clear color
+// TODO: rename parameters
+// TODO: handle transparency if no clear color?
+// TODO: pack depth in the alpha channel?
+// TODO: use ColorRapresentation instead of Color
 
-type OldRendererData = { oldPixelRatio: number; oldScissorTest: boolean; renderTarget: WebGLRenderTarget };
+type OldRendererData = { renderTarget: WebGLRenderTarget; oldPixelRatio: number; oldScissorTest: boolean; oldClearAlpha: number };
 
 export interface CreateTextureAtlasParams {
   renderer: WebGLRenderer;
@@ -25,6 +29,25 @@ const oldViewport = new Vector4();
 const coords = new Vector2();
 
 export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarget {
+  return create(params);
+}
+
+export function createNormalDepthMap(params: CreateTextureAtlasParams): WebGLRenderTarget {
+  const { target } = params;
+  // const oldParent = target.parent;
+  // const scene = new Scene(); // se è già scena è diiverso.. inoltre cacha questo oggetto
+
+  return create(params, () => {
+    // target.parent = scene;
+    // target.overrideMaterial = new MeshNormalMaterial(); // custom shader per avere anche depth (deve usare la normalMap se c'è già)
+    target.overrideMaterial = new MeshDepthMaterial(); // custom shader per avere anche depth (deve usare la normalMap se c'è già)
+  }, () => {
+    target.overrideMaterial = null;
+    // target.parent = oldParent;
+  });
+}
+
+function create(params: CreateTextureAtlasParams, onBeforeRender?: () => void, onAfterRender?: () => void): WebGLRenderTarget {
   const { renderer, target, useHemiOctahedron, usePerspectiveCamera } = params;
 
   if (!renderer) throw new Error('"renderer" is mandatory.');
@@ -41,7 +64,8 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
   const cameraFactor = params.cameraFactor ?? 1;
   const camera = getCamera();
 
-  const { oldPixelRatio, oldScissorTest, renderTarget } = setupRenderer();
+  const { renderTarget, oldPixelRatio, oldScissorTest, oldClearAlpha } = setupRenderer();
+  if (onBeforeRender) onBeforeRender();
 
   for (let row = 0; row < countPerSide; row++) {
     for (let col = 0; col < countPerSide; col++) {
@@ -49,6 +73,7 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
     }
   }
 
+  if (onAfterRender) onAfterRender();
   restoreRenderer();
 
   return renderTarget;
@@ -66,7 +91,6 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
     const yOffset = gridY * atlasSize;
     renderer.setViewport(xOffset, yOffset, spriteSize, spriteSize);
     renderer.setScissor(xOffset, yOffset, spriteSize, spriteSize);
-    // TOOD alpha or custom color? renderer.setClearColor(Math.random() * 0xffffff);
     renderer.render(target, camera);
   }
 
@@ -93,6 +117,7 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
   function setupRenderer(): OldRendererData {
     const oldPixelRatio = renderer.getPixelRatio();
     const oldScissorTest = renderer.getScissorTest();
+    const oldClearAlpha = renderer.getClearAlpha();
     renderer.getScissor(oldScissor);
     renderer.getViewport(oldViewport);
 
@@ -100,8 +125,9 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
     renderer.setRenderTarget(renderTarget);
     renderer.setScissorTest(true);
     renderer.setPixelRatio(1);
+    renderer.setClearAlpha(0);
 
-    return { oldPixelRatio, oldScissorTest, renderTarget };
+    return { renderTarget, oldPixelRatio, oldScissorTest, oldClearAlpha };
   }
 
   function restoreRenderer(): void {
@@ -110,5 +136,6 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
     renderer.setViewport(oldViewport.x, oldViewport.y, oldViewport.z, oldViewport.w);
     renderer.setScissor(oldScissor.x, oldScissor.y, oldScissor.z, oldScissor.w);
     renderer.setPixelRatio(oldPixelRatio);
+    renderer.setClearAlpha(oldClearAlpha);
   }
 }

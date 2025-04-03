@@ -16,7 +16,7 @@ const mesh = gltf.scene;
 
 scene.add(mesh, new HemisphereLight('white', 'green'), new AmbientLight());
 
-const countPerSide = 8;
+const countPerSide = 16;
 
 const albedoRenderTarget = createAlbedo({
   renderer: main.renderer,
@@ -24,12 +24,23 @@ const albedoRenderTarget = createAlbedo({
   useHemiOctahedron: true,
   usePerspectiveCamera: false,
   countPerSide,
-  size: 2048
+  size: 4096
 });
 
 const albedo = albedoRenderTarget.texture;
 
-const planeSprite = new Mesh(new PlaneGeometry(), new MeshBasicMaterial({ map: albedo })).translateX(2).translateY(0.9);
+// const testRT = createNormalDepthMap({
+//   renderer: main.renderer,
+//   target: scene,
+//   useHemiOctahedron: true,
+//   usePerspectiveCamera: false,
+//   countPerSide,
+//   size: 4096
+// });
+
+// exportTextureFromRenderTarget(main.renderer, testRT, 'normal');
+
+const planeSprite = new Mesh(new PlaneGeometry(), new MeshBasicMaterial({ map: albedo, transparent: true })).translateX(2).translateY(0.9);
 planeSprite.scale.multiplyScalar(2);
 scene.add(planeSprite);
 
@@ -39,7 +50,7 @@ planeSprite.on('animate', (e) => planeSprite.rotation.y += e.delta * 0.5);
 
 // use this to download albedo: exportTextureFromRenderTarget(main.renderer, albedoRenderTarget, 'albedo');
 
-main.createView({ scene, camera: mainCamera, backgroundColor: 'black' });
+main.createView({ scene, camera: mainCamera, backgroundColor: 'cyan' });
 
 planeSprite.material.onBeforeCompile = (p, renderer) => {
   p.uniforms.countPerSide = { value: countPerSide }; // TODO put in the shader without using uniform
@@ -128,7 +139,7 @@ planeSprite.material.onBeforeCompile = (p, renderer) => {
       
       vec4 blendedColor = quad_a * framesWeight.x + quad_b * framesWeight.y + quad_c * framesWeight.z;
 
-      if (blendedColor.r == 0. && blendedColor.g == 0. && blendedColor.b == 0.) discard;
+      if (blendedColor.a == 0.0) discard;
       diffuseColor *= blendedColor;
     `);
 };
