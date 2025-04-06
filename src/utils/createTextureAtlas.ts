@@ -32,7 +32,7 @@ export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarge
   return create(params);
 }
 
-export function createNormalDepthMap(params: CreateTextureAtlasParams): WebGLRenderTarget {
+export function createDepthMap(params: CreateTextureAtlasParams): WebGLRenderTarget {
   const { target } = params;
   // const oldParent = target.parent;
   // const scene = new Scene(); // se è già scena è diiverso.. inoltre cacha questo oggetto
