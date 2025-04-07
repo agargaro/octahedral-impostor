@@ -11,16 +11,47 @@ import { hemiOctaGridToDir, octaGridToDir } from './octahedron.js';
 
 type OldRendererData = { renderTarget: WebGLRenderTarget; oldPixelRatio: number; oldScissorTest: boolean; oldClearAlpha: number };
 
+/**
+ * Parameters used to generate a texture atlas from a 3D object.
+ * The atlas is created by rendering multiple views of the object arranged in a grid.
+ */
 export interface CreateTextureAtlasParams {
-  renderer: WebGLRenderer;
+  /**
+   * Whether to use a hemispherical octahedral projection instead of a full octahedral one.
+   * Use this to generate views covering only the upper hemisphere of the object.
+   */
   useHemiOctahedron: boolean;
+  /**
+   * Whether to render views using a perspective camera.
+   * If false, an orthographic camera will be used instead.
+   */
   usePerspectiveCamera: boolean;
+  /**
+   * The 3D object to render from multiple directions.
+   * Typically a `Mesh`, `Group`, or any `Object3D` hierarchy.
+   */
   target: Object3D;
-  size?: number;
-  countPerSide?: number;
+  /**
+   * The full size (in pixels) of the resulting square texture atlas.
+   * For example, 2048 will result in a 2048×2048 texture.
+   * @default 2048
+   */
+  textureSize?: number;
+  /**
+   * Number of sprite cells per side of the atlas grid.
+   * For example, 16 will result in 16×16 = 256 unique views.
+   * @default 16
+   */
+  spritesPerSide?: number;
+  /**
+   * A multiplier applied to the camera's distance from the object's bounding sphere.
+   * Controls how far the camera is placed from the object when rendering each view.
+   * @default 1
+   */
   cameraFactor?: number;
 }
 
+export const renderer = new WebGLRenderer();
 const perspectiveCamera = new PerspectiveCamera();
 const orthographicCamera = new OrthographicCamera();
 const bSphere = new Sphere();
@@ -48,15 +79,15 @@ export function createDepthMap(params: CreateTextureAtlasParams): WebGLRenderTar
 }
 
 function create(params: CreateTextureAtlasParams, onBeforeRender?: () => void, onAfterRender?: () => void): WebGLRenderTarget {
-  const { renderer, target, useHemiOctahedron, usePerspectiveCamera } = params;
+  const { target, useHemiOctahedron, usePerspectiveCamera } = params;
 
   if (!renderer) throw new Error('"renderer" is mandatory.');
   if (!target) throw new Error('"target" is mandatory.');
   if (useHemiOctahedron == null) throw new Error('"useHemiOctahedron" is mandatory.');
   if (perspectiveCamera == null) throw new Error('"usePerspectiveCamera" is mandatory.');
 
-  const atlasSize = params.size ?? 2048;
-  const countPerSide = params.countPerSide ?? 16;
+  const atlasSize = params.textureSize ?? 2048;
+  const countPerSide = params.spritesPerSide ?? 16;
   const spriteSize = atlasSize / countPerSide;
 
   computeBoundingSphereFromObject(target, bSphere, true); // TODO optiona flag for the last 'true'
@@ -114,6 +145,7 @@ function create(params: CreateTextureAtlasParams, onBeforeRender?: () => void, o
     return orthographicCamera;
   }
 
+  // TODO questo diventa inutile ora, rivedere
   function setupRenderer(): OldRendererData {
     const oldPixelRatio = renderer.getPixelRatio();
     const oldScissorTest = renderer.getScissorTest();

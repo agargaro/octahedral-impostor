@@ -1,6 +1,7 @@
-import { WebGLRenderer, WebGLRenderTarget } from 'three';
+import { WebGLRenderTarget } from 'three';
+import { renderer } from './createTextureAtlas.js';
 
-export function exportTextureFromRenderTarget(renderer: WebGLRenderer, renderTarget: WebGLRenderTarget, fileName: string): void {
+export function exportTextureFromRenderTarget(renderTarget: WebGLRenderTarget, fileName: string): void {
   const width = renderTarget.texture.image.width;
   const height = renderTarget.texture.image.height;
   const readBuffer = new Uint8Array(width * height * 4);
@@ -20,13 +21,14 @@ export function exportTextureFromRenderTarget(renderer: WebGLRenderer, renderTar
       const dest = (x + y * width) * 4;
       const src = (x + (height - y - 1) * width) * 4; // vertical flip
 
-      if (readBuffer[src + 3] === 0) { // empty pixel
-        imageDataArray[dest] = 0; // TODO this is the clear color
-        imageDataArray[dest + 1] = 0;
-        imageDataArray[dest + 2] = 0;
-        imageDataArray[dest + 3] = 255;
-        continue;
-      }
+      // questo ora non serve, se utilizzeremo un clear color servirà invece
+      // if (readBuffer[src + 3] === 0) { // empty pixel
+      //   imageDataArray[dest] = 0; // TODO this is the clear color
+      //   imageDataArray[dest + 1] = 0;
+      //   imageDataArray[dest + 2] = 0;
+      //   imageDataArray[dest + 3] = 255;
+      //   continue;
+      // }
 
       imageDataArray[dest] = readBuffer[src];
       imageDataArray[dest + 1] = readBuffer[src + 1];
