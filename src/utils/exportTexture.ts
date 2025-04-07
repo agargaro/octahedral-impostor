@@ -1,7 +1,6 @@
-import { WebGLRenderTarget } from 'three';
-import { renderer } from './createTextureAtlas.js';
+import { WebGLRenderer, WebGLRenderTarget } from 'three';
 
-export function exportTextureFromRenderTarget(renderTarget: WebGLRenderTarget, fileName: string): void {
+export function exportTextureFromRenderTarget(renderer: WebGLRenderer, renderTarget: WebGLRenderTarget, fileName: string): void {
   const width = renderTarget.texture.image.width;
   const height = renderTarget.texture.image.height;
   const readBuffer = new Uint8Array(width * height * 4);

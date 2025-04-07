@@ -9,7 +9,7 @@ vec3 spriteProjection(vec3 spriteNormal, vec2 loc_uv) {
   }
 
   vec3 x = normalize(cross(up, z));
-  vec3 y = normalize(cross(x, z));
+  vec3 y = normalize(cross(z, x));
 
   loc_uv -= vec2(0.5, 0.5); // TODO we can use position instead
   vec2 uv = (loc_uv) * 2.0; // -1 to 1 

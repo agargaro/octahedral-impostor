@@ -1,6 +1,5 @@
-import { DoubleSide, Material, Texture, Vector2, WebGLRenderTarget } from 'three';
+import { DoubleSide, Material, Texture, Vector2, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { createAlbedo, createDepthMap, CreateTextureAtlasParams } from '../utils/createTextureAtlas.js';
-import { exportTextureFromRenderTarget } from '../utils/exportTexture.js';
 
 export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
   public readonly material: InstanceType<M>;
@@ -25,9 +24,9 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
     return this.material;
   }
 
-  public create(options: CreateTextureAtlasParams): InstanceType<M> {
-    this._albedoRT = createAlbedo(options);
-    this._depthMapRT = createDepthMap(options);
+  public create(renderer: WebGLRenderer, options: CreateTextureAtlasParams): InstanceType<M> {
+    this._albedoRT = createAlbedo(renderer, options);
+    this._depthMapRT = createDepthMap(renderer, options);
     this._spritesPerSide = options.spritesPerSide;
     this.albedo = this._albedoRT.texture;
     this.depthMap = this._depthMapRT.texture;
@@ -35,21 +34,22 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
     return this.material;
   }
 
-  public exportAlbedo(fileName: string): void {
-    if (!this._albedoRT) throw new Error('Cannot export a texture passed as parameter.');
-    exportTextureFromRenderTarget(this._albedoRT, fileName);
-  }
+  // public exportAlbedo(fileName: string): void {
+  //   if (!this._albedoRT) throw new Error('Cannot export a texture passed as parameter.');
+  //   exportTextureFromRenderTarget(this._albedoRT, fileName);
+  // }
 
-  public exportDepthMap(fileName: string): void {
-    if (!this._depthMapRT) throw new Error('Cannot export a texture passed as parameter.');
-    exportTextureFromRenderTarget(this._depthMapRT, fileName);
-  }
+  // public exportDepthMap(fileName: string): void {
+  //   if (!this._depthMapRT) throw new Error('Cannot export a texture passed as parameter.');
+  //   exportTextureFromRenderTarget(this._depthMapRT, fileName);
+  // }
 
   protected patchMaterial(): void {
     // TODO fix if onBeforeCompile already exists
 
     this.material.onBeforeCompile = (parameters) => {
       parameters.uniforms.spritesPerSide = { value: new Vector2(this._spritesPerSide, this._spritesPerSide) }; // TODO put in the shader without using uniform
+
       parameters.uniforms.albedo = { value: this.albedo };
       parameters.uniforms.depthMap = { value: this.depthMap };
       parameters.uniforms.depthScale = { value: 1 };
@@ -65,7 +65,7 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
         `);
 
       parameters.vertexShader = parameters.vertexShader.replace('#include <project_vertex>', `
-          // #include <ez_octa_project_vertex>
+          #include <ez_octa_project_vertex>
           #include <project_vertex>
         `);
 
@@ -77,18 +77,16 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
         `);
 
       parameters.fragmentShader = parameters.fragmentShader.replace('#include <map_fragment>', `
-          // float tileSize = 1.0 / spritesPerSide.x;
+          float tileSize = 1.0 / spritesPerSide.x;
   
-          // vec4 quad_a = texture2D(albedo, (vUv + vFrame1) * tileSize);
-          // // vec4 quad_b = texture2D(albedo, (vUv + vFrame2) * tileSize);
-          // // vec4 quad_c = texture2D(albedo, (vUv + vFrame3) * tileSize);
+          vec4 quad_a = texture2D(albedo, (vUv + vFrame1) * tileSize);
+          vec4 quad_b = texture2D(albedo, (vUv + vFrame2) * tileSize);
+          vec4 quad_c = texture2D(albedo, (vUv + vFrame3) * tileSize);
           
-          // // vec4 blendedColor = quad_a * vSpritesWeight.x + quad_b * vSpritesWeight.y + quad_c * vSpritesWeight.z;
-          // vec4 blendedColor = quad_a;
-    
-          // if (blendedColor.a == 0.0) discard;
-          // diffuseColor *= blendedColor;
-          diffuseColor *= vec4(vUv.y, 0.0, 0.0, 1.0); 
+          vec4 blendedColor = quad_a * vSpritesWeight.x + quad_b * vSpritesWeight.y + quad_c * vSpritesWeight.z;
+          
+          if (blendedColor.a == 0.0) discard;
+          diffuseColor *= blendedColor;
         `);
     };
   }

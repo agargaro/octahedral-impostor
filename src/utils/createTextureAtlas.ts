@@ -51,7 +51,6 @@ export interface CreateTextureAtlasParams {
   cameraFactor?: number;
 }
 
-export const renderer = new WebGLRenderer();
 const perspectiveCamera = new PerspectiveCamera();
 const orthographicCamera = new OrthographicCamera();
 const bSphere = new Sphere();
@@ -59,16 +58,16 @@ const oldScissor = new Vector4();
 const oldViewport = new Vector4();
 const coords = new Vector2();
 
-export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarget {
-  return create(params);
+export function createAlbedo(renderer: WebGLRenderer, params: CreateTextureAtlasParams): WebGLRenderTarget {
+  return create(renderer, params);
 }
 
-export function createDepthMap(params: CreateTextureAtlasParams): WebGLRenderTarget {
+export function createDepthMap(renderer: WebGLRenderer, params: CreateTextureAtlasParams): WebGLRenderTarget {
   const { target } = params;
   // const oldParent = target.parent;
   // const scene = new Scene(); // se è già scena è diiverso.. inoltre cacha questo oggetto
 
-  return create(params, () => {
+  return create(renderer, params, () => {
     // target.parent = scene;
     // target.overrideMaterial = new MeshNormalMaterial(); // custom shader per avere anche depth (deve usare la normalMap se c'è già)
     target.overrideMaterial = new MeshDepthMaterial(); // custom shader per avere anche depth (deve usare la normalMap se c'è già)
@@ -78,7 +77,7 @@ export function createDepthMap(params: CreateTextureAtlasParams): WebGLRenderTar
   });
 }
 
-function create(params: CreateTextureAtlasParams, onBeforeRender?: () => void, onAfterRender?: () => void): WebGLRenderTarget {
+function create(renderer: WebGLRenderer, params: CreateTextureAtlasParams, onBeforeRender?: () => void, onAfterRender?: () => void): WebGLRenderTarget {
   const { target, useHemiOctahedron, usePerspectiveCamera } = params;
 
   if (!renderer) throw new Error('"renderer" is mandatory.');
