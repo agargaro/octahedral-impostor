@@ -1,5 +1,6 @@
-import { DoubleSide, Material, Texture, Vector2, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { Material, Texture, Vector2, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { createAlbedo, createDepthMap, CreateTextureAtlasParams } from '../utils/createTextureAtlas.js';
+import { exportTextureFromRenderTarget } from '../utils/exportTexture.js';
 
 export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
   public readonly material: InstanceType<M>;
@@ -13,7 +14,6 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
     const material = new materialType();
     material.transparent = true;
     material.depthWrite = false;
-    material.side = DoubleSide; // TODO REMOVE
     this.material = material as InstanceType<M>;
   }
 
@@ -34,10 +34,10 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
     return this.material;
   }
 
-  // public exportAlbedo(fileName: string): void {
-  //   if (!this._albedoRT) throw new Error('Cannot export a texture passed as parameter.');
-  //   exportTextureFromRenderTarget(this._albedoRT, fileName);
-  // }
+  public exportAlbedo(renderer: WebGLRenderer, fileName: string): void {
+    if (!this._albedoRT) throw new Error('Cannot export a texture passed as parameter.');
+    exportTextureFromRenderTarget(renderer, this._albedoRT, fileName);
+  }
 
   // public exportDepthMap(fileName: string): void {
   //   if (!this._depthMapRT) throw new Error('Cannot export a texture passed as parameter.');
@@ -52,7 +52,7 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
 
       parameters.uniforms.albedo = { value: this.albedo };
       parameters.uniforms.depthMap = { value: this.depthMap };
-      parameters.uniforms.depthScale = { value: 1 };
+      parameters.uniforms.depthScale = { value: 0 };
 
       parameters.vertexShader = parameters.vertexShader.replace('void main() {', `
           #include <ez_octa_uniforms>
@@ -73,20 +73,40 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
           #include <ez_octa_uniforms>
           #include <ez_octa_varyings>
     
+          vec4 blendColors(vec2 uv1, vec2 uv2, vec2 uv3)
+          {
+            vec4 sprite1 = texture2D(albedo, uv1, 0.0);
+            vec4 sprite2 = texture2D(albedo, uv2, 0.0);
+            vec4 sprite3 = texture2D(albedo, uv3, 0.0);
+            return sprite1 * vSpritesWeight.x + sprite2 * vSpritesWeight.y + sprite3 * vSpritesWeight.z;
+          }
+
+          vec2 recalculateUV(vec2 uv_f,  vec2 frame, vec2 xy_f, vec2 frame_size, float d_scale)
+          {
+            uv_f = clamp(uv_f, vec2(0), vec2(1));
+            vec2 uv_quad = frame_size * (frame + uv_f);
+            vec4 n_depth = 1.0 - texture2D( depthMap, uv_quad, 0.0 );
+            uv_f = xy_f * (0.5 - n_depth.r) * d_scale + uv_f;
+            uv_f = clamp(uv_f, vec2(0), vec2(1));
+            uv_f =  frame_size * (frame + uv_f);
+            return clamp(uv_f, vec2(0), vec2(1));
+          }
+
           void main() {
         `);
 
       parameters.fragmentShader = parameters.fragmentShader.replace('#include <map_fragment>', `
-          float tileSize = 1.0 / spritesPerSide.x;
-  
-          vec4 quad_a = texture2D(albedo, (vUv + vFrame1) * tileSize);
-          vec4 quad_b = texture2D(albedo, (vUv + vFrame2) * tileSize);
-          vec4 quad_c = texture2D(albedo, (vUv + vFrame3) * tileSize);
+          vec2 quad_size = vec2(1) / spritesPerSide.x;
+
+          vec2 uv_f1 = recalculateUV(vFrameUv1, vFrame1, vFrameXY1, quad_size, depthScale);
+          vec2 uv_f2 = recalculateUV(vFrameUv2, vFrame2, vFrameXY2, quad_size, depthScale);
+          vec2 uv_f3 = recalculateUV(vFrameUv3, vFrame3, vFrameXY3, quad_size, depthScale);
+
+          vec4 baseTex = blendColors(1.0 - uv_f1, 1.0 - uv_f2, 1.0 - uv_f3);
+          // vec4 baseTex = blendColors((vFrame1 + vUv) * quad_size, (vFrame2 + vUv) * quad_size, (vFrame3 + vUv) * quad_size);
           
-          vec4 blendedColor = quad_a * vSpritesWeight.x + quad_b * vSpritesWeight.y + quad_c * vSpritesWeight.z;
-          
-          if (blendedColor.a == 0.0) discard;
-          diffuseColor *= blendedColor;
+          if (baseTex.a <= 0.5) discard; // TODO add uniform
+          diffuseColor *= baseTex;
         `);
     };
   }

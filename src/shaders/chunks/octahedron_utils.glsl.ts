@@ -20,6 +20,6 @@ vec3 hemiOctaGridToDir(vec2 grid) {
 
 vec3 gridToDir(vec2 grid, vec2 frameCountMinusOne) {
   grid = grid / frameCountMinusOne;
-  return normalize(hemiOctaGridToDir(grid)); // TODO check if already normalized
+  return normalize(hemiOctaGridToDir(grid)); 
 }
 `;

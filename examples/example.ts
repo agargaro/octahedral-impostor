@@ -8,7 +8,7 @@ const scene = new Scene();
 const main = new Main(); // init renderer and other stuff
 const controls = new OrbitControls(mainCamera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
-controls.minPolarAngle = 0.2; // TODO improve if this is 0
+controls.minPolarAngle = 0.3; // TODO improve if this is 0
 controls.update();
 
 const gltf = await Asset.load<GLTF>(GLTFLoader, 'https://threejs.org/examples/models/gltf/Soldier.glb');
@@ -19,7 +19,8 @@ scene.add(mesh, new HemisphereLight('white', 'green'), new AmbientLight());
 const spritesPerSide = 16;
 
 // TODO improve this
-const material = new OctahedronImpostorMaterialGenerator(MeshBasicMaterial).create(main.renderer, {
+const materialGen = new OctahedronImpostorMaterialGenerator(MeshBasicMaterial);
+const material = materialGen.create(main.renderer, {
   target: scene,
   useHemiOctahedron: true,
   usePerspectiveCamera: false,
@@ -27,13 +28,15 @@ const material = new OctahedronImpostorMaterialGenerator(MeshBasicMaterial).crea
   textureSize: 2048
 });
 
+// materialGen.exportAlbedo(main.renderer, 'albedo');
+
 const impostor = new OctahedronImpostor(material).translateX(2).translateY(0.9);
-impostor.scale.multiplyScalar(2);
+// impostor.scale.multiplyScalar(2);
 scene.add(impostor);
 
 mesh.scale.divideScalar(4);
 
-// mesh.on('animate', (e) => mesh.rotation.y += e.delta * 0.5);
-// impostor.on('animate', (e) => impostor.rotation.y += e.delta * 0.5);
+mesh.on('animate', (e) => mesh.rotation.y += e.delta * 0.5);
+impostor.on('animate', (e) => impostor.rotation.y += e.delta * 0.5);
 
 main.createView({ scene, camera: mainCamera, backgroundColor: 'cyan' });

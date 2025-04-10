@@ -31,5 +31,5 @@ export function hemiOctaDirToGrid(dir: Vector3, target = new Vector2()): Vector2
   return target.set(
     (1 + octahedron.x + octahedron.z) * 0.5,
     (1 + octahedron.z - octahedron.x) * 0.5
-  ); // ritorna tra 0 e 1
+  );
 }

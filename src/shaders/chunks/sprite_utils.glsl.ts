@@ -1,23 +1,16 @@
 export default /* glsl */`
 
-vec3 spriteProjection(vec3 spriteNormal, vec2 loc_uv) {
-  vec3 z = normalize(spriteNormal); // TODO check if already normalized
+vec3 projectVertex(vec3 spriteNormal) {
+  vec3 z = spriteNormal;
 
   vec3 up = vec3(0, 1, 0);
   if (abs(z.y) > 0.999) {
-      up = vec3(0, 0, -1);
+      up = vec3(0, 0, -1); // TODO
   }
-
   vec3 x = normalize(cross(up, z));
-  vec3 y = normalize(cross(z, x));
+  vec3 y = normalize(cross(z, x)); // TODO invertire?
 
-  loc_uv -= vec2(0.5, 0.5); // TODO we can use position instead
-  vec2 uv = (loc_uv) * 2.0; // -1 to 1 
-  vec3 newX = x * uv.x * 0.5;
-  vec3 newY = y * uv.y * 0.5;  
-  return newX + newY;
-
-  //return x * position.x + y * position.y;
+  return x * position.x + y * position.y;
 }
 
 void computeSpritesWeight(vec2 grid) {
