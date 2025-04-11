@@ -22,6 +22,9 @@ vFrame1 = gridFloor;
 computeSpritesWeight(gridFract);
 vec3 projectedQuadADir = gridToDir(vFrame1, framesMinusOne); //convert frame coordinate to octahedron direction
 
+vec3 projected2 = projectVertex(projectedQuadADir); // TODO cambia qui
+
+
 vFrame2 = clamp(vFrame1 + mix(vec2(0, 1), vec2(1, 0), vSpritesWeight.w), vec2(0,0), framesMinusOne);
 vec3 projectedQuadBDir = gridToDir(vFrame2, framesMinusOne);
 

@@ -8,19 +8,21 @@ const scene = new Scene();
 const main = new Main(); // init renderer and other stuff
 const controls = new OrbitControls(mainCamera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
-controls.minPolarAngle = 0.3; // TODO improve if this is 0
+controls.minPolarAngle = 0.2; // TODO improve if this is 0
 controls.update();
 
-const gltf = await Asset.load<GLTF>(GLTFLoader, 'https://threejs.org/examples/models/gltf/Soldier.glb');
+const gltf = await Asset.load<GLTF>(GLTFLoader, 'tree.gltf');
+// const gltf = await Asset.load<GLTF>(GLTFLoader, 'https://threejs.org/examples/models/gltf/Soldier.glb');
 const mesh = gltf.scene;
 
 scene.add(mesh, new HemisphereLight('white', 'green'), new AmbientLight());
 
-const spritesPerSide = 16;
+const spritesPerSide = 12;
 
 // TODO improve this
-const materialGen = new OctahedronImpostorMaterialGenerator(MeshBasicMaterial);
-const material = materialGen.create(main.renderer, {
+const materialRT = new OctahedronImpostorMaterialGenerator(MeshBasicMaterial);
+
+const material = materialRT.create(main.renderer, {
   target: scene,
   useHemiOctahedron: true,
   usePerspectiveCamera: false,
@@ -28,10 +30,10 @@ const material = materialGen.create(main.renderer, {
   textureSize: 2048
 });
 
-// materialGen.exportAlbedo(main.renderer, 'albedo');
+// exportTextureFromRenderTarget(main.renderer, materialRT._albedoRT, 'normal');
 
 const impostor = new OctahedronImpostor(material).translateX(2).translateY(0.9);
-// impostor.scale.multiplyScalar(2);
+impostor.scale.multiplyScalar(2);
 scene.add(impostor);
 
 mesh.scale.divideScalar(4);

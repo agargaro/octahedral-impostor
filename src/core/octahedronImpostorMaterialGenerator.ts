@@ -102,10 +102,10 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
           vec2 uv_f2 = recalculateUV(vFrameUv2, vFrame2, vFrameXY2, quad_size, depthScale);
           vec2 uv_f3 = recalculateUV(vFrameUv3, vFrame3, vFrameXY3, quad_size, depthScale);
 
-          vec4 baseTex = blendColors(1.0 - uv_f1, 1.0 - uv_f2, 1.0 - uv_f3);
-          // vec4 baseTex = blendColors((vFrame1 + vUv) * quad_size, (vFrame2 + vUv) * quad_size, (vFrame3 + vUv) * quad_size);
+          // vec4 baseTex = blendColors(1.0 - uv_f1, 1.0 - uv_f2, 1.0 - uv_f3);
+          vec4 baseTex = blendColors((vFrame1 + vUv) * quad_size, (vFrame2 + vUv) * quad_size, (vFrame3 + vUv) * quad_size);
           
-          if (baseTex.a <= 0.5) discard; // TODO add uniform
+          if (baseTex.a <= 0.0) discard; // TODO add uniform
           diffuseColor *= baseTex;
         `);
     };
