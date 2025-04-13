@@ -1,49 +1,44 @@
 export default /* glsl */`
 
-vUv = uv;
-vec2 framesMinusOne = spritesPerSide - vec2(1);
-// vec3 cameraPos_WS = (CAMERA_MATRIX * vec4(vec3(0), 1.0)).xyz;
-vec3 cameraPos_OS = (inverse(modelMatrix) * vec4(cameraPosition, 1.0)).xyz;
+vec2 spritesMinusOne = vec2(spritesPerSide - 1.0);
+vec3 cameraPos_OS = inverse(mat3(modelMatrix)) * cameraPosition; // TODO check transpose
 
-vec3 pivotToCameraRay = (cameraPos_OS) * 10.0;
+vec3 pivotToCamera = cameraPos_OS * 10.0;
 vec3 pivotToCameraDir = normalize(cameraPos_OS);
 
-vec2 grid = dirToGrid(pivotToCameraDir); // bias and scale to 0 to 1
-grid = clamp((grid + 1.0) * 0.5, vec2(0, 0), vec2(1, 1));
-grid *= framesMinusOne;
-grid = clamp(grid, vec2(0), vec2(framesMinusOne));
-vec2 gridFloor = min(floor(grid), framesMinusOne);
+vec2 grid = encodeDirection(pivotToCameraDir) * spritesMinusOne; 
+vec2 gridFloor = min(floor(grid), spritesMinusOne);
 vec2 gridFract = fract(grid);
 
-vec3 projected = spriteProjection(pivotToCameraDir, uv);
-vec3 vertexToCameraRay = (pivotToCameraRay - (projected));
-vec3 vertexToCameraDir = normalize(vertexToCameraRay);
+vec3 projectedVertex = projectVertex(pivotToCameraDir);
+vec3 vertexToCamera = pivotToCamera + projectedVertex;
+vec3 vertexToCameraDir = normalize(vertexToCamera);
 
-vFrame1 = gridFloor;
 computeSpritesWeight(gridFract);
-vec3 projectedQuadADir = gridToDir(vFrame1, framesMinusOne); //convert frame coordinate to octahedron direction
 
-vFrame2 = clamp(vFrame1 + mix(vec2(0, 1), vec2(1, 0), vSpritesWeight.w), vec2(0,0), framesMinusOne);
-vec3 projectedQuadBDir = gridToDir(vFrame2, framesMinusOne);
+vSprite1 = gridFloor;
+vSprite2 = min(vSprite1 + mix(vec2(0.0, 1.0), vec2(1.0, 0.0), vSpritesWeight.w), spritesMinusOne);
+vSprite3 = min(vSprite1 + vec2(1.0), spritesMinusOne);
 
-vFrame3 = clamp(vFrame1 + vec2(1), vec2(0,0), framesMinusOne);
-vec3 projectedQuadCDir = gridToDir(vFrame3, framesMinusOne);
+vec3 spriteNormal1 = decodeDirection(vSprite1, spritesMinusOne);
+vec3 spriteNormal2 = decodeDirection(vSprite2, spritesMinusOne);
+vec3 spriteNormal3 = decodeDirection(vSprite3, spritesMinusOne);
 
-vFrameNormal1 = (modelViewMatrix * vec4(projectedQuadADir, 0)).xyz;
-vFrameNormal2 = (modelViewMatrix * vec4(projectedQuadBDir, 0)).xyz;
-vFrameNormal3 = (modelViewMatrix * vec4(projectedQuadCDir, 0)).xyz;
+vSpriteNormal1 = normalMatrix * spriteNormal1;
+vSpriteNormal2 = normalMatrix * spriteNormal2; 
+vSpriteNormal3 = normalMatrix * spriteNormal3;
 
-vec3 plane_x1, plane_y1, plane_x2, plane_y2, plane_x3, plane_y3;
+vec3 planeX1, planeY1, planeX2, planeY2, planeX3, planeY3;
 
-calcuateXYbasis(projectedQuadADir, plane_x1, plane_y1);
-vFrameUv1 = virtualPlaneUV(projectedQuadADir, plane_x1, plane_y1, pivotToCameraRay, vertexToCameraRay, 1.0); // TODO remove last param
-vFrameXY1 = projectOnPlaneBasis(-vertexToCameraDir, projectedQuadADir, plane_x1, plane_y1).xy;
+computePlaneBasis(spriteNormal1, planeX1, planeY1);
+computePlaneBasis(spriteNormal2, planeX2, planeY2);
+computePlaneBasis(spriteNormal3, planeX3, planeY3);
 
-calcuateXYbasis(projectedQuadBDir, plane_x2, plane_y2);
-vFrameUv2 = virtualPlaneUV(projectedQuadBDir, plane_x2, plane_y2, pivotToCameraRay, vertexToCameraRay, 1.0); // TODO remove last param
-vFrameXY2 = projectOnPlaneBasis(-vertexToCameraDir, projectedQuadBDir, plane_x2, plane_y2).xy;
+vSpriteUV1 = projectToPlaneUV(spriteNormal1, planeX1, planeY1, pivotToCamera, vertexToCamera); 
+vSpriteUV2 = projectToPlaneUV(spriteNormal2, planeX2, planeY2, pivotToCamera, vertexToCamera); 
+vSpriteUV3 = projectToPlaneUV(spriteNormal3, planeX3, planeY3, pivotToCamera, vertexToCamera); 
 
-calcuateXYbasis(projectedQuadCDir, plane_x3, plane_y3);
-vFrameUv3 = virtualPlaneUV(projectedQuadCDir, plane_x3, plane_y3, pivotToCameraRay, vertexToCameraRay, 1.0); // TODO remove last param
-vFrameXY3 = projectOnPlaneBasis(-vertexToCameraDir, projectedQuadCDir, plane_x3, plane_y3).xy;
+vSpriteViewDir1 = projectDirectionToBasis(-vertexToCameraDir, spriteNormal1, planeX1, planeY1).xy;
+vSpriteViewDir2 = projectDirectionToBasis(-vertexToCameraDir, spriteNormal2, planeX2, planeY2).xy;
+vSpriteViewDir3 = projectDirectionToBasis(-vertexToCameraDir, spriteNormal3, planeX3, planeY3).xy;
 `;

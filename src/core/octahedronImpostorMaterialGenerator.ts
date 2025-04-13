@@ -1,5 +1,6 @@
-import { DoubleSide, Material, Texture, Vector2, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { Material, Texture, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { createAlbedo, createDepthMap, CreateTextureAtlasParams } from '../utils/createTextureAtlas.js';
+import { exportTextureFromRenderTarget } from '../utils/exportTexture.js';
 
 export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
   public readonly material: InstanceType<M>;
@@ -9,11 +10,13 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
   protected _depthMapRT: WebGLRenderTarget = null;
   protected _spritesPerSide: number = null;
 
+  public parallaxScale = { value: 0.2 }; // TODO remove it, just for testc
+  public alphaClamp = { value: 0.5 }; // TODO remove it, just for testc
+
   constructor(materialType: M) {
     const material = new materialType();
     material.transparent = true;
     material.depthWrite = false;
-    material.side = DoubleSide; // TODO REMOVE
     this.material = material as InstanceType<M>;
   }
 
@@ -34,10 +37,10 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
     return this.material;
   }
 
-  // public exportAlbedo(fileName: string): void {
-  //   if (!this._albedoRT) throw new Error('Cannot export a texture passed as parameter.');
-  //   exportTextureFromRenderTarget(this._albedoRT, fileName);
-  // }
+  public exportAlbedo(renderer: WebGLRenderer, fileName: string): void {
+    if (!this._albedoRT) throw new Error('Cannot export a texture passed as parameter.');
+    exportTextureFromRenderTarget(renderer, this._albedoRT, fileName);
+  }
 
   // public exportDepthMap(fileName: string): void {
   //   if (!this._depthMapRT) throw new Error('Cannot export a texture passed as parameter.');
@@ -48,11 +51,12 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
     // TODO fix if onBeforeCompile already exists
 
     this.material.onBeforeCompile = (parameters) => {
-      parameters.uniforms.spritesPerSide = { value: new Vector2(this._spritesPerSide, this._spritesPerSide) }; // TODO put in the shader without using uniform
+      parameters.uniforms.spritesPerSide = { value: this._spritesPerSide }; // TODO put in the shader without using uniform
 
       parameters.uniforms.albedo = { value: this.albedo };
       parameters.uniforms.depthMap = { value: this.depthMap };
-      parameters.uniforms.depthScale = { value: 1 };
+      parameters.uniforms.parallaxScale = this.parallaxScale;
+      parameters.uniforms.alphaClamp = this.alphaClamp;
 
       parameters.vertexShader = parameters.vertexShader.replace('void main() {', `
           #include <ez_octa_uniforms>
@@ -73,19 +77,38 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
           #include <ez_octa_uniforms>
           #include <ez_octa_varyings>
     
+          vec4 blendImpostorSamples(vec2 uv1, vec2 uv2, vec2 uv3)
+          {
+            vec4 sprite1 = texture2D(albedo, uv1, 0.0);
+            vec4 sprite2 = texture2D(albedo, uv2, 0.0);
+            vec4 sprite3 = texture2D(albedo, uv3, 0.0);
+            return sprite1 * vSpritesWeight.x + sprite2 * vSpritesWeight.y + sprite3 * vSpritesWeight.z;
+          }
+
+          vec2 parallaxUV(vec2 uv, vec2 gridIndex, vec2 viewDir, float spriteSize)
+          {
+            vec2 spriteUv = spriteSize * (gridIndex + uv);
+            float depth = 1.0 - texture2D(depthMap, spriteUv, 0.0).x; // TODO invert depth map color
+
+            uv = viewDir * depth * parallaxScale + uv;
+            uv = clamp(uv, vec2(0.0), vec2(1.0));
+
+            return spriteSize * (gridIndex + uv);
+          }
+
           void main() {
         `);
 
       parameters.fragmentShader = parameters.fragmentShader.replace('#include <map_fragment>', `
-          float tileSize = 1.0 / spritesPerSide.x;
-  
-          vec4 quad_a = texture2D(albedo, (vUv + vFrame1) * tileSize);
-          vec4 quad_b = texture2D(albedo, (vUv + vFrame2) * tileSize);
-          vec4 quad_c = texture2D(albedo, (vUv + vFrame3) * tileSize);
-          
-          vec4 blendedColor = quad_a * vSpritesWeight.x + quad_b * vSpritesWeight.y + quad_c * vSpritesWeight.z;
-          
-          if (blendedColor.a == 0.0) discard;
+          float spriteSize = 1.0 / spritesPerSide;
+
+          vec2 uv1 = parallaxUV(vSpriteUV1, vSprite1, vSpriteViewDir1, spriteSize);
+          vec2 uv2 = parallaxUV(vSpriteUV2, vSprite2, vSpriteViewDir2, spriteSize);
+          vec2 uv3 = parallaxUV(vSpriteUV3, vSprite3, vSpriteViewDir3, spriteSize);
+
+          vec4 blendedColor = blendImpostorSamples(uv1, uv2, uv3);
+          if (blendedColor.a <= alphaClamp) discard;
+
           diffuseColor *= blendedColor;
         `);
     };

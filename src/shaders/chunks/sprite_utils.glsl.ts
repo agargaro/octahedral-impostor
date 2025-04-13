@@ -1,72 +1,44 @@
 export default /* glsl */`
 
-vec3 spriteProjection(vec3 spriteNormal, vec2 loc_uv) {
-  vec3 z = normalize(spriteNormal); // TODO check if already normalized
+void computePlaneBasis(vec3 normal, out vec3 tangent, out vec3 bitangent)
+{
+  vec3 up = vec3(0.0, 1.0, 0.0);
 
-  vec3 up = vec3(0, 1, 0);
-  if (abs(z.y) > 0.999) {
-      up = vec3(0, 0, -1);
-  }
+  if (normal.y > 0.999) up = vec3(-1.0, 0.0, 0.0);
+  // // only if no hemiOcta
+  // if (normal.y < -0.999) up = vec3(1.0, 0.0, 0.0);
 
-  vec3 x = normalize(cross(up, z));
-  vec3 y = normalize(cross(z, x));
-
-  loc_uv -= vec2(0.5, 0.5); // TODO we can use position instead
-  vec2 uv = (loc_uv) * 2.0; // -1 to 1 
-  vec3 newX = x * uv.x * 0.5;
-  vec3 newY = y * uv.y * 0.5;  
-  return newX + newY;
-
-  //return x * position.x + y * position.y;
+  tangent = normalize(cross(up, normal));
+  bitangent = normalize(cross(normal, tangent));
 }
 
-void computeSpritesWeight(vec2 grid) {
+vec3 projectVertex(vec3 normal) {
+  vec3 x, y;
+  computePlaneBasis(normal, x, y);
+  return x * position.x + y * position.y;
+}
+
+void computeSpritesWeight(vec2 gridFract) {
   vSpritesWeight = vec4(
-    min(1.0 - grid.x, 1.0 - grid.y),
-    abs(grid.x - grid.y),
-    min(grid.x, grid.y),
-    ceil(grid.x - grid.y)
+    min(1.0 - gridFract.x, 1.0 - gridFract.y),
+    abs(gridFract.x - gridFract.y),
+    min(gridFract.x, gridFract.y),
+    ceil(gridFract.x - gridFract.y)
   );
 }
 
-vec2 virtualPlaneUV(vec3 plane_normal, vec3 plane_x, vec3 plane_y, vec3 pivotToCameraRay, vec3 vertexToCameraRay, float size)
-{
-  plane_normal = normalize(plane_normal);
-  plane_x = normalize(plane_x);
-  plane_y = normalize(plane_y); 
+vec2 projectToPlaneUV(vec3 normal, vec3 tangent, vec3 bitangent, vec3 pivotToCamera, vec3 vertexToCamera) {
+    float pivotDot = dot(normal, pivotToCamera);
+    float vertexDot = dot(normal, vertexToCamera);
 
-  float projectedNormalRayLength = dot(plane_normal, pivotToCameraRay);
-  float projectedVertexRayLength = dot(plane_normal, vertexToCameraRay);
-  float offsetLength = projectedNormalRayLength/projectedVertexRayLength;
-  vec3 offsetVector = vertexToCameraRay * offsetLength - pivotToCameraRay;  
+    vec3 offset = vertexToCamera * (pivotDot / vertexDot) - pivotToCamera;
+    vec2 uv = vec2(dot(tangent, offset), dot(bitangent, offset));
 
-  vec2 duv = vec2(
-    dot(plane_x , offsetVector),
-    dot(plane_y, offsetVector)
-  );  
-
-  duv /= 2.0 * size; //we are in space -1 to 1
-  duv += 0.5;
-  return duv;
+    return uv + 0.5;
 }
 
-void calcuateXYbasis(vec3 plane_normal, out vec3 plane_x, out vec3 plane_y)
+vec3 projectDirectionToBasis(vec3 dir, vec3 normal, vec3 tangent, vec3 bitangent)
 {
-  vec3 up = vec3(0,1,0);
-  if (abs(plane_normal.y) > 0.999f)
-  {
-    up = vec3(0,0,1); //TODO segno diverso
-  }
-  plane_x = normalize(cross(plane_normal, up));
-  plane_y = normalize(cross(plane_x, plane_normal));
-}
-
-vec3 projectOnPlaneBasis(vec3 ray, vec3 plane_normal, vec3 plane_x, vec3 plane_y)
-{
-  return normalize(vec3( 
-    dot(plane_x,ray), 
-    dot(plane_y,ray), 
-    dot(plane_normal,ray) 
-  ));
+  return normalize(vec3(dot(tangent, dir), dot(bitangent, dir), dot(normal, dir)));
 }
 `;

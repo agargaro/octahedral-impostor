@@ -87,6 +87,7 @@ function create(renderer: WebGLRenderer, params: CreateTextureAtlasParams, onBef
 
   const atlasSize = params.textureSize ?? 2048;
   const countPerSide = params.spritesPerSide ?? 16;
+  const countPerSideMinusOne = countPerSide - 1;
   const spriteSize = atlasSize / countPerSide;
 
   computeBoundingSphereFromObject(target, bSphere, true); // TODO optiona flag for the last 'true'
@@ -99,7 +100,7 @@ function create(renderer: WebGLRenderer, params: CreateTextureAtlasParams, onBef
 
   for (let row = 0; row < countPerSide; row++) {
     for (let col = 0; col < countPerSide; col++) {
-      renderView(col / countPerSide, row / countPerSide);
+      renderView(col, row);
     }
   }
 
@@ -108,8 +109,8 @@ function create(renderer: WebGLRenderer, params: CreateTextureAtlasParams, onBef
 
   return renderTarget;
 
-  function renderView(gridX: number, gridY: number): void {
-    coords.set(gridX, gridY);
+  function renderView(col: number, row: number): void {
+    coords.set(col / (countPerSideMinusOne), row / (countPerSideMinusOne));
 
     if (useHemiOctahedron) hemiOctaGridToDir(coords, camera.position);
     else octaGridToDir(coords, camera.position);
@@ -117,8 +118,8 @@ function create(renderer: WebGLRenderer, params: CreateTextureAtlasParams, onBef
     camera.position.setLength(bSphere.radius * cameraFactor).add(bSphere.center);
     camera.lookAt(bSphere.center);
 
-    const xOffset = gridX * atlasSize;
-    const yOffset = gridY * atlasSize;
+    const xOffset = (col / countPerSide) * atlasSize;
+    const yOffset = (row / countPerSide) * atlasSize;
     renderer.setViewport(xOffset, yOffset, spriteSize, spriteSize);
     renderer.setScissor(xOffset, yOffset, spriteSize, spriteSize);
     renderer.render(target, camera);
