@@ -7,4 +7,5 @@ uniform sampler2D depthMap;
 // uniform bool isFullSphere;
 uniform vec2 spritesPerSide;
 uniform float depthScale;
+uniform float alphaClamp;
 `;

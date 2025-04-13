@@ -7,7 +7,7 @@ vec3 cameraPos_OS = inverse(mat3(modelMatrix)) * cameraPosition; // TODO check t
 vec3 pivotToCameraRay = (cameraPos_OS) * 10.0;
 vec3 pivotToCameraDir = normalize(cameraPos_OS);
 
-vec2 grid = dirToGrid(pivotToCameraDir) * framesMinusOne; 
+vec2 grid = encodeDirection(pivotToCameraDir) * framesMinusOne; 
 grid = clamp(grid, vec2(0), vec2(framesMinusOne));
 vec2 gridFloor = min(floor(grid), framesMinusOne);
 vec2 gridFract = fract(grid);
@@ -22,9 +22,9 @@ vFrame1 = gridFloor;
 vFrame2 = clamp(vFrame1 + mix(vec2(0, 1), vec2(1, 0), vSpritesWeight.w), vec2(0, 0), framesMinusOne);
 vFrame3 = clamp(vFrame1 + vec2(1), vec2(0, 0), framesMinusOne);
 
-vec3 projectedQuadADir = gridToDir(vFrame1, framesMinusOne);
-vec3 projectedQuadBDir = gridToDir(vFrame2, framesMinusOne);
-vec3 projectedQuadCDir = gridToDir(vFrame3, framesMinusOne);
+vec3 projectedQuadADir = decodeDirection(vFrame1, framesMinusOne);
+vec3 projectedQuadBDir = decodeDirection(vFrame2, framesMinusOne);
+vec3 projectedQuadCDir = decodeDirection(vFrame3, framesMinusOne);
 
 // vFrameNormal1 = (normalMatrix * vec4(projectedQuadADir, 0)).xyz;
 // vFrameNormal2 = (normalMatrix * vec4(projectedQuadBDir, 0)).xyz; 

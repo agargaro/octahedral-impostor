@@ -52,7 +52,8 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
 
       parameters.uniforms.albedo = { value: this.albedo };
       parameters.uniforms.depthMap = { value: this.depthMap };
-      parameters.uniforms.depthScale = { value: 0.2 };
+      parameters.uniforms.depthScale = { value: 0.0 };
+      parameters.uniforms.alphaClamp = { value: 0.4 };
 
       parameters.vertexShader = parameters.vertexShader.replace('void main() {', `
           #include <ez_octa_uniforms>
@@ -103,9 +104,8 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
           vec2 uv_f3 = recalculateUV(vFrameUv3, vFrame3, vFrameXY3, quad_size, depthScale);
 
           vec4 baseTex = blendColors(uv_f1, uv_f2, uv_f3);
-          // vec4 baseTex = blendColors((vFrame1 + vUv) * quad_size, (vFrame2 + vUv) * quad_size, (vFrame3 + vUv) * quad_size);
           
-          if (baseTex.a <= 0.5) discard; // TODO add uniform
+          if (baseTex.a <= alphaClamp) discard;
           diffuseColor *= baseTex;
         `);
     };
