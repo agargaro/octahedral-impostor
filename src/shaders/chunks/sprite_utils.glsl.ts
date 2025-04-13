@@ -1,49 +1,44 @@
 export default /* glsl */`
 
-void calcuateXYbasis(vec3 planeNormal, out vec3 planeX, out vec3 planeY)
+void computePlaneBasis(vec3 normal, out vec3 tangent, out vec3 bitangent)
 {
-  vec3 up = vec3(0, 1, 0);
+  vec3 up = vec3(0.0, 1.0, 0.0);
 
-  if (planeNormal.y > 0.999) up = vec3(-1, 0, 0);
+  if (normal.y > 0.999) up = vec3(-1.0, 0.0, 0.0);
   // // only if no hemiOcta
-  // if (planeNormal.y < -0.999) up = vec3(1, 0, 0);
+  // if (normal.y < -0.999) up = vec3(1.0, 0.0, 0.0);
 
-  planeX = normalize(cross(up, planeNormal));
-  planeY = normalize(cross(planeNormal, planeX));
+  tangent = normalize(cross(up, normal));
+  bitangent = normalize(cross(normal, tangent));
 }
 
-vec3 projectVertex(vec3 spriteNormal) {
+vec3 projectVertex(vec3 normal) {
   vec3 x, y;
-  calcuateXYbasis(spriteNormal, x, y);
+  computePlaneBasis(normal, x, y);
   return x * position.x + y * position.y;
 }
 
-void computeSpritesWeight(vec2 grid) {
+void computeSpritesWeight(vec2 gridFract) {
   vSpritesWeight = vec4(
-    min(1.0 - grid.x, 1.0 - grid.y),
-    abs(grid.x - grid.y),
-    min(grid.x, grid.y),
-    ceil(grid.x - grid.y)
+    min(1.0 - gridFract.x, 1.0 - gridFract.y),
+    abs(gridFract.x - gridFract.y),
+    min(gridFract.x, gridFract.y),
+    ceil(gridFract.x - gridFract.y)
   );
 }
 
-vec2 projectToPlaneUV(vec3 planeNormal, vec3 planeTangent, vec3 planeBitangent, vec3 pivotToCamera, vec3 vertexToCamera) {
-    // Project both rays onto the plane's normal
-    float pivotDot = dot(planeNormal, pivotToCamera);
-    float vertexDot = dot(planeNormal, vertexToCamera);
+vec2 projectToPlaneUV(vec3 normal, vec3 tangent, vec3 bitangent, vec3 pivotToCamera, vec3 vertexToCamera) {
+    float pivotDot = dot(normal, pivotToCamera);
+    float vertexDot = dot(normal, vertexToCamera);
 
-    // Scale the vertex ray to match the depth of the pivot
-    vec3 offset = (vertexToCamera * (pivotDot / vertexDot)) - pivotToCamera;
+    vec3 offset = vertexToCamera * (pivotDot / vertexDot) - pivotToCamera;
+    vec2 uv = vec2(dot(tangent, offset), dot(bitangent, offset));
 
-    // Project the offset onto the tangent plane axes to get UV coordinates
-    vec2 uv = vec2(dot(planeTangent, offset), dot(planeBitangent, offset));
-
-    // Convert from [-1, 1] range to [0, 1] UV space
     return uv + 0.5;
 }
 
-vec3 projectOnPlaneBasis(vec3 ray, vec3 plane_normal, vec3 plane_x, vec3 plane_y)
+vec3 projectDirectionToBasis(vec3 dir, vec3 normal, vec3 tangent, vec3 bitangent)
 {
-  return normalize(vec3(dot(plane_x, ray), dot(plane_y, ray), dot(plane_normal, ray)));
+  return normalize(vec3(dot(tangent, dir), dot(bitangent, dir), dot(normal, dir)));
 }
 `;

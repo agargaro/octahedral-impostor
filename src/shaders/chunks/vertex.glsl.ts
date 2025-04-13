@@ -32,15 +32,15 @@ vec3 projectedQuadCDir = decodeDirection(vFrame3, framesMinusOne);
 
 vec3 plane_x1, plane_y1, plane_x2, plane_y2, plane_x3, plane_y3;
 
-calcuateXYbasis(projectedQuadADir, plane_x1, plane_y1);
-calcuateXYbasis(projectedQuadBDir, plane_x2, plane_y2);
-calcuateXYbasis(projectedQuadCDir, plane_x3, plane_y3);
+computePlaneBasis(projectedQuadADir, plane_x1, plane_y1);
+computePlaneBasis(projectedQuadBDir, plane_x2, plane_y2);
+computePlaneBasis(projectedQuadCDir, plane_x3, plane_y3);
 
 vFrameUv1 = projectToPlaneUV(projectedQuadADir, plane_x1, plane_y1, pivotToCameraRay, vertexToCameraRay); 
 vFrameUv2 = projectToPlaneUV(projectedQuadBDir, plane_x2, plane_y2, pivotToCameraRay, vertexToCameraRay); 
 vFrameUv3 = projectToPlaneUV(projectedQuadCDir, plane_x3, plane_y3, pivotToCameraRay, vertexToCameraRay); 
 
-vFrameXY1 = projectOnPlaneBasis(-vertexToCameraDir, projectedQuadADir, plane_x1, plane_y1).xy;
-vFrameXY2 = projectOnPlaneBasis(-vertexToCameraDir, projectedQuadBDir, plane_x2, plane_y2).xy;
-vFrameXY3 = projectOnPlaneBasis(-vertexToCameraDir, projectedQuadCDir, plane_x3, plane_y3).xy;
+vFrameXY1 = projectDirectionToBasis(-vertexToCameraDir, projectedQuadADir, plane_x1, plane_y1).xy;
+vFrameXY2 = projectDirectionToBasis(-vertexToCameraDir, projectedQuadBDir, plane_x2, plane_y2).xy;
+vFrameXY3 = projectDirectionToBasis(-vertexToCameraDir, projectedQuadCDir, plane_x3, plane_y3).xy;
 `;
