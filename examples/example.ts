@@ -11,37 +11,33 @@ const controls = new OrbitControls(mainCamera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
 controls.update();
 
-const gltf = await Asset.load<GLTF>(GLTFLoader, 'tree.gltf');
-// const gltf = await Asset.load<GLTF>(GLTFLoader, 'https://threejs.org/examples/models/gltf/Soldier.glb');
-const mesh = gltf.scene;
+Asset.load<GLTF>(GLTFLoader, 'tree.gltf').then((gltf) => {
+  const mesh = gltf.scene;
 
-// const geometry = await Asset.load<BufferGeometry>(BufferGeometryLoader, 'https://threejs.org/examples/models/json/suzanne_buffergeometry.json');
-// geometry.computeVertexNormals();
-// const mesh = new Mesh(geometry, new MeshNormalMaterial());
+  scene.add(mesh, new HemisphereLight('white', 'green'), new AmbientLight());
 
-scene.add(mesh, new HemisphereLight('white', 'green'), new AmbientLight());
+  // TODO improve this
+  const materialRT = new OctahedronImpostorMaterialGenerator(MeshBasicMaterial);
 
-// TODO improve this
-const materialRT = new OctahedronImpostorMaterialGenerator(MeshBasicMaterial);
+  const material = materialRT.create(main.renderer, {
+    target: scene,
+    useHemiOctahedron: true,
+    usePerspectiveCamera: false,
+    spritesPerSide: 16,
+    textureSize: 2048
+  });
 
-const material = materialRT.create(main.renderer, {
-  target: scene,
-  useHemiOctahedron: true,
-  usePerspectiveCamera: false,
-  spritesPerSide: 16,
-  textureSize: 2048
+  // exportTextureFromRenderTarget(main.renderer, materialRT._albedoRT, 'normal');
+
+  const impostor = new OctahedronImpostor(material).translateX(2).translateY(0.9);
+  impostor.scale.multiplyScalar(2);
+  scene.add(impostor);
+
+  mesh.scale.divideScalar(4);
+
+  main.createView({ scene, camera: mainCamera, backgroundColor: 'cyan' });
+
+  const gui = new GUI();
+  gui.add(materialRT.parallaxScale, 'value', 0, 1, 0.01).name('parallaxScale');
+  gui.add(materialRT.alphaClamp, 'value', 0, 1, 0.01).name('alphaClamp');
 });
-
-// exportTextureFromRenderTarget(main.renderer, materialRT._albedoRT, 'normal');
-
-const impostor = new OctahedronImpostor(material).translateX(2).translateY(0.9);
-impostor.scale.multiplyScalar(2);
-scene.add(impostor);
-
-mesh.scale.divideScalar(4);
-
-main.createView({ scene, camera: mainCamera, backgroundColor: 'cyan' });
-
-const gui = new GUI();
-gui.add(materialRT.parallaxScale, 'value', 0, 1, 0.01).name('parallaxScale');
-gui.add(materialRT.alphaClamp, 'value', 0, 1, 0.01).name('alphaClamp');
