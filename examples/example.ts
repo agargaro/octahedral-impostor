@@ -1,5 +1,5 @@
 import { Asset, Main, OrthographicCameraAuto } from '@three.ez/main';
-import { AmbientLight, HemisphereLight, MeshBasicMaterial, Scene } from 'three';
+import { AmbientLight, BufferGeometry, BufferGeometryLoader, HemisphereLight, Mesh, MeshBasicMaterial, MeshNormalMaterial, Scene } from 'three';
 import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import { OctahedronImpostor, OctahedronImpostorMaterialGenerator } from '../src/index.js';
 
@@ -10,17 +10,15 @@ const controls = new OrbitControls(mainCamera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
 controls.update();
 
-const gltf = await Asset.load<GLTF>(GLTFLoader, 'tree.gltf');
-// const gltf = await Asset.load<GLTF>(GLTFLoader, 'https://threejs.org/examples/models/gltf/Soldier.glb');
-const mesh = gltf.scene;
+// const gltf = await Asset.load<GLTF>(GLTFLoader, 'tree.gltf');
+// // const gltf = await Asset.load<GLTF>(GLTFLoader, 'https://threejs.org/examples/models/gltf/Soldier.glb');
+// const mesh = gltf.scene;
 
-// const geometry = await Asset.load<BufferGeometry>(BufferGeometryLoader, 'https://threejs.org/examples/models/json/suzanne_buffergeometry.json');
-// geometry.computeVertexNormals();
-// const mesh = new Mesh(geometry, new MeshNormalMaterial());
+const geometry = await Asset.load<BufferGeometry>(BufferGeometryLoader, 'https://threejs.org/examples/models/json/suzanne_buffergeometry.json');
+geometry.computeVertexNormals();
+const mesh = new Mesh(geometry, new MeshNormalMaterial());
 
 scene.add(mesh, new HemisphereLight('white', 'green'), new AmbientLight());
-
-const spritesPerSide = 16;
 
 // TODO improve this
 const materialRT = new OctahedronImpostorMaterialGenerator(MeshBasicMaterial);
@@ -29,7 +27,7 @@ const material = materialRT.create(main.renderer, {
   target: scene,
   useHemiOctahedron: true,
   usePerspectiveCamera: false,
-  spritesPerSide,
+  spritesPerSide: 16,
   textureSize: 2048
 });
 

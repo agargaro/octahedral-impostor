@@ -6,6 +6,6 @@ uniform sampler2D depthMap;
 // uniform sampler2D ormMap;
 // uniform bool isFullSphere;
 uniform float spritesPerSide;
-uniform float depthScale;
+uniform float parallaxScale;
 uniform float alphaClamp;
 `;

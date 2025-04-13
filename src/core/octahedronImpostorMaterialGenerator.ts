@@ -1,4 +1,4 @@
-import { Material, Texture, Vector2, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { Material, Texture, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { createAlbedo, createDepthMap, CreateTextureAtlasParams } from '../utils/createTextureAtlas.js';
 import { exportTextureFromRenderTarget } from '../utils/exportTexture.js';
 
@@ -52,7 +52,7 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
 
       parameters.uniforms.albedo = { value: this.albedo };
       parameters.uniforms.depthMap = { value: this.depthMap };
-      parameters.uniforms.depthScale = { value: 0.2 };
+      parameters.uniforms.parallaxScale = { value: 0.1 };
       parameters.uniforms.alphaClamp = { value: 0.5 };
 
       parameters.vertexShader = parameters.vertexShader.replace('void main() {', `
@@ -87,7 +87,7 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
             vec2 spriteUv = spriteSize * (gridIndex + uv);
             float depth = 1.0 - texture2D(depthMap, spriteUv, 0.0).x; // TODO invert depth map color
 
-            uv = viewDir * depth * depthScale + uv;
+            uv = viewDir * depth * parallaxScale + uv;
             uv = clamp(uv, vec2(0.0), vec2(1.0));
 
             return spriteSize * (gridIndex + uv);

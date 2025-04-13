@@ -1,14 +1,13 @@
 export default /* glsl */`
 
-float spritesMinusOne = spritesPerSide - 1.0;
+vec2 spritesMinusOne = vec2(spritesPerSide - 1.0);
 vec3 cameraPos_OS = inverse(mat3(modelMatrix)) * cameraPosition; // TODO check transpose
 
 vec3 pivotToCamera = cameraPos_OS * 10.0;
 vec3 pivotToCameraDir = normalize(cameraPos_OS);
 
 vec2 grid = encodeDirection(pivotToCameraDir) * spritesMinusOne; 
-grid = clamp(grid, vec2(0.0), vec2(spritesMinusOne));
-vec2 gridFloor = min(floor(grid), vec2(spritesMinusOne));
+vec2 gridFloor = min(floor(grid), spritesMinusOne);
 vec2 gridFract = fract(grid);
 
 vec3 projectedVertex = projectVertex(pivotToCameraDir);
@@ -18,8 +17,8 @@ vec3 vertexToCameraDir = normalize(vertexToCamera);
 computeSpritesWeight(gridFract);
 
 vSprite1 = gridFloor;
-vSprite2 = clamp(vSprite1 + mix(vec2(0.0, 1.0), vec2(1.0, 0.0), vSpritesWeight.w), vec2(0.0, 0.0), vec2(spritesMinusOne));
-vSprite3 = clamp(vSprite1 + vec2(1.0), vec2(0.0, 0.0), vec2(spritesMinusOne));
+vSprite2 = min(vSprite1 + mix(vec2(0.0, 1.0), vec2(1.0, 0.0), vSpritesWeight.w), spritesMinusOne);
+vSprite3 = min(vSprite1 + vec2(1.0), spritesMinusOne);
 
 vec3 spriteNormal1 = decodeDirection(vSprite1, spritesMinusOne);
 vec3 spriteNormal2 = decodeDirection(vSprite2, spritesMinusOne);
