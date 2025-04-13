@@ -52,7 +52,7 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
 
       parameters.uniforms.albedo = { value: this.albedo };
       parameters.uniforms.depthMap = { value: this.depthMap };
-      parameters.uniforms.depthScale = { value: 0.1 };
+      parameters.uniforms.depthScale = { value: 0.2 };
       parameters.uniforms.alphaClamp = { value: 0.5 };
 
       parameters.vertexShader = parameters.vertexShader.replace('void main() {', `
@@ -84,13 +84,13 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
 
           vec2 parallaxUV(vec2 uv, vec2 gridIndex, vec2 viewDir, float spriteSize)
           {
-            uv = clamp(uv, vec2(0), vec2(1));
-            vec2 uv_quad = spriteSize * (gridIndex + uv);
-            vec4 n_depth = 1.0 - texture2D( depthMap, uv_quad, 0.0 );
-            uv = viewDir * n_depth.r * depthScale + uv;
-            uv = clamp(uv, vec2(0), vec2(1));
-            uv =  spriteSize * (gridIndex + uv);
-            return clamp(uv, vec2(0), vec2(1));
+            vec2 spriteUv = spriteSize * (gridIndex + uv);
+            float depth = 1.0 - texture2D(depthMap, spriteUv, 0.0).x; // TODO invert depth map color
+
+            uv = viewDir * depth * depthScale + uv;
+            uv = clamp(uv, vec2(0.0), vec2(1.0));
+
+            return spriteSize * (gridIndex + uv);
           }
 
           void main() {
@@ -103,10 +103,10 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
           vec2 uv2 = parallaxUV(vSpriteUV2, vSprite2, vSpriteViewDir2, spriteSize);
           vec2 uv3 = parallaxUV(vSpriteUV3, vSprite3, vSpriteViewDir3, spriteSize);
 
-          vec4 baseTex = blendImpostorSamples(uv1, uv2, uv3);
-          
-          if (baseTex.a <= alphaClamp) discard;
-          diffuseColor *= baseTex;
+          vec4 blendedColor = blendImpostorSamples(uv1, uv2, uv3);
+          if (blendedColor.a <= alphaClamp) discard;
+
+          diffuseColor *= blendedColor;
         `);
     };
   }
