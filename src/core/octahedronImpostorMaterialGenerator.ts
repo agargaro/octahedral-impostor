@@ -48,12 +48,12 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
     // TODO fix if onBeforeCompile already exists
 
     this.material.onBeforeCompile = (parameters) => {
-      parameters.uniforms.spritesPerSide = { value: new Vector2(this._spritesPerSide, this._spritesPerSide) }; // TODO put in the shader without using uniform
+      parameters.uniforms.spritesPerSide = { value: this._spritesPerSide }; // TODO put in the shader without using uniform
 
       parameters.uniforms.albedo = { value: this.albedo };
       parameters.uniforms.depthMap = { value: this.depthMap };
-      parameters.uniforms.depthScale = { value: 0.0 };
-      parameters.uniforms.alphaClamp = { value: 0.4 };
+      parameters.uniforms.depthScale = { value: 0.1 };
+      parameters.uniforms.alphaClamp = { value: 0.5 };
 
       parameters.vertexShader = parameters.vertexShader.replace('void main() {', `
           #include <ez_octa_uniforms>
@@ -74,7 +74,7 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
           #include <ez_octa_uniforms>
           #include <ez_octa_varyings>
     
-          vec4 blendColors(vec2 uv1, vec2 uv2, vec2 uv3)
+          vec4 blendImpostorSamples(vec2 uv1, vec2 uv2, vec2 uv3)
           {
             vec4 sprite1 = texture2D(albedo, uv1, 0.0);
             vec4 sprite2 = texture2D(albedo, uv2, 0.0);
@@ -82,28 +82,28 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
             return sprite1 * vSpritesWeight.x + sprite2 * vSpritesWeight.y + sprite3 * vSpritesWeight.z;
           }
 
-          vec2 recalculateUV(vec2 uv_f,  vec2 frame, vec2 xy_f, float frame_size, float d_scale)
+          vec2 parallaxUV(vec2 uv, vec2 gridIndex, vec2 viewDir, float spriteSize)
           {
-            uv_f = clamp(uv_f, vec2(0), vec2(1));
-            vec2 uv_quad = frame_size * (frame + uv_f);
+            uv = clamp(uv, vec2(0), vec2(1));
+            vec2 uv_quad = spriteSize * (gridIndex + uv);
             vec4 n_depth = 1.0 - texture2D( depthMap, uv_quad, 0.0 );
-            uv_f = xy_f * n_depth.r * d_scale + uv_f;
-            uv_f = clamp(uv_f, vec2(0), vec2(1));
-            uv_f =  frame_size * (frame + uv_f);
-            return clamp(uv_f, vec2(0), vec2(1));
+            uv = viewDir * n_depth.r * depthScale + uv;
+            uv = clamp(uv, vec2(0), vec2(1));
+            uv =  spriteSize * (gridIndex + uv);
+            return clamp(uv, vec2(0), vec2(1));
           }
 
           void main() {
         `);
 
       parameters.fragmentShader = parameters.fragmentShader.replace('#include <map_fragment>', `
-          float quad_size = 1.0 / spritesPerSide.x;
+          float spriteSize = 1.0 / spritesPerSide;
 
-          vec2 uv_f1 = recalculateUV(vFrameUv1, vFrame1, vFrameXY1, quad_size, depthScale);
-          vec2 uv_f2 = recalculateUV(vFrameUv2, vFrame2, vFrameXY2, quad_size, depthScale);
-          vec2 uv_f3 = recalculateUV(vFrameUv3, vFrame3, vFrameXY3, quad_size, depthScale);
+          vec2 uv1 = parallaxUV(vSpriteUV1, vSprite1, vSpriteViewDir1, spriteSize);
+          vec2 uv2 = parallaxUV(vSpriteUV2, vSprite2, vSpriteViewDir2, spriteSize);
+          vec2 uv3 = parallaxUV(vSpriteUV3, vSprite3, vSpriteViewDir3, spriteSize);
 
-          vec4 baseTex = blendColors(uv_f1, uv_f2, uv_f3);
+          vec4 baseTex = blendImpostorSamples(uv1, uv2, uv3);
           
           if (baseTex.a <= alphaClamp) discard;
           diffuseColor *= baseTex;

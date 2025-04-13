@@ -1,18 +1,16 @@
 export default /* glsl */`
 
-varying vec2 vUv;
-varying vec4 vSpritesWeight; // TODO flat?
-
-varying vec2 vFrameUv1;
-varying vec2 vFrameXY1;
-// flat varying vec3 vFrameNormal1;
-flat varying vec2 vFrame1;
-varying vec2 vFrameUv2;
-varying vec2 vFrameXY2;
-// flat varying vec3 vFrameNormal2;
-flat varying vec2 vFrame2;
-varying vec2 vFrameUv3;
-varying vec2 vFrameXY3;
-// flat varying vec3 vFrameNormal3;
-flat varying vec2 vFrame3;
+flat varying vec4 vSpritesWeight;
+flat varying vec2 vSprite1;
+flat varying vec2 vSprite2;
+flat varying vec2 vSprite3;
+varying vec2 vSpriteUV1;
+varying vec2 vSpriteUV2;
+varying vec2 vSpriteUV3;
+varying vec2 vSpriteViewDir1;
+varying vec2 vSpriteViewDir2;
+varying vec2 vSpriteViewDir3;
+flat varying vec3 vSpriteNormal1;
+flat varying vec3 vSpriteNormal2;
+flat varying vec3 vSpriteNormal3;
 `;

@@ -17,7 +17,7 @@ vec3 decodeHemiOctaGrid(vec2 gridUV) {
   return position;
 }
 
-vec3 decodeDirection(vec2 gridIndex, vec2 spriteCountMinusOne) {
+vec3 decodeDirection(vec2 gridIndex, float spriteCountMinusOne) {
   vec2 gridUV = gridIndex / spriteCountMinusOne;
   return normalize(decodeHemiOctaGrid(gridUV));
 }
