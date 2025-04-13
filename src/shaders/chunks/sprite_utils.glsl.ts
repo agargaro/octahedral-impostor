@@ -1,15 +1,20 @@
 export default /* glsl */`
 
-vec3 projectVertex(vec3 spriteNormal) {
-  vec3 z = spriteNormal;
-
+void calcuateXYbasis(vec3 planeNormal, out vec3 planeX, out vec3 planeY)
+{
   vec3 up = vec3(0, 1, 0);
-  if (abs(z.y) > 0.999) {
-      up = vec3(0, 0, -1); // TODO
-  }
-  vec3 x = normalize(cross(up, z));
-  vec3 y = normalize(cross(z, x)); // TODO invertire?
 
+  if (planeNormal.y > 0.999) up = vec3(-1, 0, 0);
+  // // only if no hemiOcta
+  // if (planeNormal.y < -0.999) up = vec3(1, 0, 0);
+
+  planeX = normalize(cross(up, planeNormal));
+  planeY = normalize(cross(planeNormal, planeX));
+}
+
+vec3 projectVertex(vec3 spriteNormal) {
+  vec3 x, y;
+  calcuateXYbasis(spriteNormal, x, y);
   return x * position.x + y * position.y;
 }
 
@@ -22,44 +27,23 @@ void computeSpritesWeight(vec2 grid) {
   );
 }
 
-vec2 virtualPlaneUV(vec3 plane_normal, vec3 plane_x, vec3 plane_y, vec3 pivotToCameraRay, vec3 vertexToCameraRay, float size)
-{
-  plane_normal = normalize(plane_normal);
-  plane_x = normalize(plane_x);
-  plane_y = normalize(plane_y); 
+vec2 projectToPlaneUV(vec3 planeNormal, vec3 planeTangent, vec3 planeBitangent, vec3 pivotToCamera, vec3 vertexToCamera) {
+    // Project both rays onto the plane's normal
+    float pivotDot = dot(planeNormal, pivotToCamera);
+    float vertexDot = dot(planeNormal, vertexToCamera);
 
-  float projectedNormalRayLength = dot(plane_normal, pivotToCameraRay);
-  float projectedVertexRayLength = dot(plane_normal, vertexToCameraRay);
-  float offsetLength = projectedNormalRayLength/projectedVertexRayLength;
-  vec3 offsetVector = vertexToCameraRay * offsetLength - pivotToCameraRay;  
+    // Scale the vertex ray to match the depth of the pivot
+    vec3 offset = (vertexToCamera * (pivotDot / vertexDot)) - pivotToCamera;
 
-  vec2 duv = vec2(
-    dot(plane_x , offsetVector),
-    dot(plane_y, offsetVector)
-  );  
+    // Project the offset onto the tangent plane axes to get UV coordinates
+    vec2 uv = vec2(dot(planeTangent, offset), dot(planeBitangent, offset));
 
-  duv /= 2.0 * size; //we are in space -1 to 1
-  duv += 0.5;
-  return duv;
-}
-
-void calcuateXYbasis(vec3 plane_normal, out vec3 plane_x, out vec3 plane_y)
-{
-  vec3 up = vec3(0,1,0);
-  if (abs(plane_normal.y) > 0.999f)
-  {
-    up = vec3(0,0,1); //TODO segno diverso
-  }
-  plane_x = normalize(cross(plane_normal, up));
-  plane_y = normalize(cross(plane_x, plane_normal));
+    // Convert from [-1, 1] range to [0, 1] UV space
+    return uv + 0.5;
 }
 
 vec3 projectOnPlaneBasis(vec3 ray, vec3 plane_normal, vec3 plane_x, vec3 plane_y)
 {
-  return normalize(vec3( 
-    dot(plane_x,ray), 
-    dot(plane_y,ray), 
-    dot(plane_normal,ray) 
-  ));
+  return normalize(vec3(dot(plane_x, ray), dot(plane_y, ray), dot(plane_normal, ray)));
 }
 `;

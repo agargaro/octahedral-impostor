@@ -52,7 +52,7 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
 
       parameters.uniforms.albedo = { value: this.albedo };
       parameters.uniforms.depthMap = { value: this.depthMap };
-      parameters.uniforms.depthScale = { value: 0 };
+      parameters.uniforms.depthScale = { value: 0.2 };
 
       parameters.vertexShader = parameters.vertexShader.replace('void main() {', `
           #include <ez_octa_uniforms>
@@ -81,12 +81,12 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
             return sprite1 * vSpritesWeight.x + sprite2 * vSpritesWeight.y + sprite3 * vSpritesWeight.z;
           }
 
-          vec2 recalculateUV(vec2 uv_f,  vec2 frame, vec2 xy_f, vec2 frame_size, float d_scale)
+          vec2 recalculateUV(vec2 uv_f,  vec2 frame, vec2 xy_f, float frame_size, float d_scale)
           {
             uv_f = clamp(uv_f, vec2(0), vec2(1));
             vec2 uv_quad = frame_size * (frame + uv_f);
             vec4 n_depth = 1.0 - texture2D( depthMap, uv_quad, 0.0 );
-            uv_f = xy_f * (0.5 - n_depth.r) * d_scale + uv_f;
+            uv_f = xy_f * n_depth.r * d_scale + uv_f;
             uv_f = clamp(uv_f, vec2(0), vec2(1));
             uv_f =  frame_size * (frame + uv_f);
             return clamp(uv_f, vec2(0), vec2(1));
@@ -96,16 +96,16 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
         `);
 
       parameters.fragmentShader = parameters.fragmentShader.replace('#include <map_fragment>', `
-          vec2 quad_size = vec2(1) / spritesPerSide.x;
+          float quad_size = 1.0 / spritesPerSide.x;
 
           vec2 uv_f1 = recalculateUV(vFrameUv1, vFrame1, vFrameXY1, quad_size, depthScale);
           vec2 uv_f2 = recalculateUV(vFrameUv2, vFrame2, vFrameXY2, quad_size, depthScale);
           vec2 uv_f3 = recalculateUV(vFrameUv3, vFrame3, vFrameXY3, quad_size, depthScale);
 
-          // vec4 baseTex = blendColors(1.0 - uv_f1, 1.0 - uv_f2, 1.0 - uv_f3);
-          vec4 baseTex = blendColors((vFrame1 + vUv) * quad_size, (vFrame2 + vUv) * quad_size, (vFrame3 + vUv) * quad_size);
+          vec4 baseTex = blendColors(uv_f1, uv_f2, uv_f3);
+          // vec4 baseTex = blendColors((vFrame1 + vUv) * quad_size, (vFrame2 + vUv) * quad_size, (vFrame3 + vUv) * quad_size);
           
-          if (baseTex.a <= 0.0) discard; // TODO add uniform
+          if (baseTex.a <= 0.5) discard; // TODO add uniform
           diffuseColor *= baseTex;
         `);
     };

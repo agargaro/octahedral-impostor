@@ -1,4 +1,4 @@
 export default /* glsl */`
 
-transformed = projected2;
+transformed = projected;
 `;

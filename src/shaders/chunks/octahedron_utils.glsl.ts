@@ -4,8 +4,7 @@ vec2 hemiOctaDirToGrid(vec3 dir) {
   vec3 octant = sign(dir);
   float sum = dot(dir, octant);
   vec3 octahedron = dir / sum;    
-  return vec2(octahedron.x + octahedron.z, octahedron.z - octahedron.x);
-  // return vec2(1.0 + octahedron.x + octahedron.z, 1.0 + octahedron.z - octahedron.x) * vec2(0.5);
+  return vec2(1.0 + octahedron.x + octahedron.z, 1.0 + octahedron.z - octahedron.x) * vec2(0.5);
 }
 
 vec2 dirToGrid(vec3 dir) {

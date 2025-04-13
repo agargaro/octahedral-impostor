@@ -8,7 +8,7 @@ const scene = new Scene();
 const main = new Main(); // init renderer and other stuff
 const controls = new OrbitControls(mainCamera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
-controls.minPolarAngle = 0.2; // TODO improve if this is 0
+controls.minPolarAngle = 0.3; // TODO improve if this is 0
 controls.update();
 
 const gltf = await Asset.load<GLTF>(GLTFLoader, 'tree.gltf');
@@ -17,7 +17,7 @@ const mesh = gltf.scene;
 
 scene.add(mesh, new HemisphereLight('white', 'green'), new AmbientLight());
 
-const spritesPerSide = 12;
+const spritesPerSide = 16;
 
 // TODO improve this
 const materialRT = new OctahedronImpostorMaterialGenerator(MeshBasicMaterial);
@@ -27,7 +27,7 @@ const material = materialRT.create(main.renderer, {
   useHemiOctahedron: true,
   usePerspectiveCamera: false,
   spritesPerSide,
-  textureSize: 2048
+  textureSize: 4096
 });
 
 // exportTextureFromRenderTarget(main.renderer, materialRT._albedoRT, 'normal');
