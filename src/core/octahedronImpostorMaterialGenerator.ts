@@ -10,6 +10,9 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
   protected _depthMapRT: WebGLRenderTarget = null;
   protected _spritesPerSide: number = null;
 
+  public parallaxScale = { value: 0.2 }; // TODO remove it, just for testc
+  public alphaClamp = { value: 0.5 }; // TODO remove it, just for testc
+
   constructor(materialType: M) {
     const material = new materialType();
     material.transparent = true;
@@ -52,8 +55,8 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
 
       parameters.uniforms.albedo = { value: this.albedo };
       parameters.uniforms.depthMap = { value: this.depthMap };
-      parameters.uniforms.parallaxScale = { value: 0.1 };
-      parameters.uniforms.alphaClamp = { value: 0.5 };
+      parameters.uniforms.parallaxScale = this.parallaxScale;
+      parameters.uniforms.alphaClamp = this.alphaClamp;
 
       parameters.vertexShader = parameters.vertexShader.replace('void main() {', `
           #include <ez_octa_uniforms>
