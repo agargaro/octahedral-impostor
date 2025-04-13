@@ -70,9 +70,9 @@ export function createDepthMap(renderer: WebGLRenderer, params: CreateTextureAtl
   return create(renderer, params, () => {
     // target.parent = scene;
     // target.overrideMaterial = new MeshNormalMaterial(); // custom shader per avere anche depth (deve usare la normalMap se c'è già)
-    target.overrideMaterial = new MeshDepthMaterial(); // custom shader per avere anche depth (deve usare la normalMap se c'è già)
+    (target as any).overrideMaterial = new MeshDepthMaterial(); // custom shader per avere anche depth (deve usare la normalMap se c'è già)
   }, () => {
-    target.overrideMaterial = null;
+    (target as any).overrideMaterial = null;
     // target.parent = oldParent;
   });
 }
