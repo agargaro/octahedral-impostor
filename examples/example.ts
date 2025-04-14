@@ -24,7 +24,7 @@ Asset.load<GLTF>(GLTFLoader, 'tree.gltf').then((gltf) => {
     useHemiOctahedron: true,
     usePerspectiveCamera: false,
     spritesPerSide: 16,
-    textureSize: 2048
+    textureSize: 4096
   });
 
   // exportTextureFromRenderTarget(main.renderer, materialRT._albedoRT, 'normal');
