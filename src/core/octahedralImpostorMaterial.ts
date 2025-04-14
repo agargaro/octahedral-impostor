@@ -61,7 +61,7 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
       // if (normal.y < -0.999) up = vec3(1.0, 0.0, 0.0);
 
       tangent = normalize(cross(up, normal));
-      bitangent = normalize(cross(normal, tangent));
+      bitangent = cross(normal, tangent);
     }
 
     vec3 projectVertex(vec3 normal) {
