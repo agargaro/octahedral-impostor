@@ -11,7 +11,7 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
   protected _spritesPerSide: number = null;
 
   public parallaxScale = { value: 0.2 }; // TODO remove it, just for testc
-  public alphaClamp = { value: 0.5 }; // TODO remove it, just for testc
+  public alphaClamp = { value: 0.0 }; // TODO remove it, just for testc
 
   constructor(materialType: M) {
     const material = new materialType();
@@ -107,8 +107,8 @@ export class OctahedronImpostorMaterialGenerator<M extends typeof Material> {
           vec2 uv3 = parallaxUV(vSpriteUV3, vSprite3, vSpriteViewDir3, spriteSize);
 
           vec4 blendedColor = blendImpostorSamples(uv1, uv2, uv3);
-          if (blendedColor.a <= alphaClamp) discard;
 
+          if (blendedColor.a <= alphaClamp) discard;
           diffuseColor *= blendedColor;
         `);
     };
