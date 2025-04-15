@@ -41,4 +41,9 @@ vec3 projectDirectionToBasis(vec3 dir, vec3 normal, vec3 tangent, vec3 bitangent
 {
   return normalize(vec3(dot(tangent, dir), dot(bitangent, dir), dot(normal, dir)));
 }
+
+vec2 projectDirectionToBasis(vec3 dir, vec3 tangent, vec3 bitangent) // TODO we can try to use this instead
+{
+  return vec2(dot(dir, tangent), dot(dir, bitangent));
+}
 `;
