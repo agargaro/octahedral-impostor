@@ -33,7 +33,7 @@ export class OctahedronImpostorMaterialGenerator {
     const material = this.material;
     material.albedo = this.albedo;
     material.depthMap = this.depthMap;
-    material.parallaxScale = 0.2;
+    material.parallaxScale = 0.1;
     material.alphaClamp = 0.5;
     material.spritesPerSide = this._spritesPerSide;
 

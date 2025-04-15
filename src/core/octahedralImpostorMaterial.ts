@@ -166,17 +166,9 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
 
     vec4 blendImpostorSamples(vec2 uv1, vec2 uv2, vec2 uv3)
     {
-      vec2 dx1 = dFdx(uv1); vec2 dy1 = dFdy(uv1);
-      vec2 dx2 = dFdx(uv2); vec2 dy2 = dFdy(uv2);
-      vec2 dx3 = dFdx(uv3); vec2 dy3 = dFdy(uv3);
-
-      vec4 sprite1 = textureGrad(albedo, uv1, dx1, dy1);
-      vec4 sprite2 = textureGrad(albedo, uv2, dx2, dy2);
-      vec4 sprite3 = textureGrad(albedo, uv3, dx3, dy3);
-
-      // vec4 sprite1 = texture2D(albedo, uv1, 0.0);
-      // vec4 sprite2 = texture2D(albedo, uv2, 0.0);
-      // vec4 sprite3 = texture2D(albedo, uv3, 0.0);
+      vec4 sprite1 = texture(albedo, uv1);
+      vec4 sprite2 = texture(albedo, uv2);
+      vec4 sprite3 = texture(albedo, uv3);
 
       return sprite1 * vSpritesWeight.x + sprite2 * vSpritesWeight.y + sprite3 * vSpritesWeight.z;
     }
@@ -204,6 +196,9 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
       if (blendedColor.a <= alphaClamp) discard;
       // blendedColor.a = (blendedColor.a - alphaClamp) / (1.0 - alphaClamp);
 
+      // remove transparency
+      blendedColor = vec4(vec3(blendedColor.rgb) / (blendedColor.a), 1.0);
+
       gl_FragColor = blendedColor;
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
@@ -228,8 +223,8 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
   constructor(parameters: OctahedralImpostorMaterialParameters = {}) {
     super();
 
-    this.transparent = true;
-    this.depthWrite = false;
+    // this.transparent = true;
+    // this.depthWrite = false;
 
     this.uniforms = {
       albedo: { value: parameters.albedo },
