@@ -79,11 +79,8 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
 
     vec2 projectToPlaneUV(vec3 normal, vec3 tangent, vec3 bitangent, vec3 cameraPosition, vec3 viewDir) {
       float denom = dot(viewDir, normal);
-      if (abs(denom) < 0.0001) return vec2(0.5);
-
       float t = -dot(cameraPosition, normal) / denom;
-       if (t < 0.0) return vec2(0.5);
-
+      
       vec3 hit = cameraPosition + viewDir * t;
       vec2 uv = vec2(dot(tangent, hit), dot(bitangent, hit));
       return uv + 0.5;
@@ -173,12 +170,12 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
       return sprite1 * vSpritesWeight.x + sprite2 * vSpritesWeight.y + sprite3 * vSpritesWeight.z;
     }
 
-    vec2 parallaxUV(vec2 uv, vec2 gridIndex, vec2 viewDir, float spriteSize) 
+    vec2 parallaxUV(vec2 uv, vec2 gridIndex, vec2 viewDir, float spriteSize, float weight) 
     {
       vec2 spriteUv = spriteSize * (gridIndex + uv);
-      float depth = 1.0 - texture(depthMap, spriteUv).x; //-0.5?
+      float depth = 1.0 - texture(depthMap, spriteUv).x;
 
-      vec2 parallaxOffset = viewDir * depth * parallaxScale;
+      vec2 parallaxOffset = viewDir * depth * parallaxScale * weight;
       uv = clamp(uv + parallaxOffset, vec2(0.0), vec2(1.0));
       
       return spriteSize * (gridIndex + uv);
@@ -187,14 +184,13 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
     void main() {
       float spriteSize = 1.0 / spritesPerSide;
 
-      vec2 uv1 = parallaxUV(vSpriteUV1, vSprite1, vSpriteViewDir1, spriteSize);
-      vec2 uv2 = parallaxUV(vSpriteUV2, vSprite2, vSpriteViewDir2, spriteSize);
-      vec2 uv3 = parallaxUV(vSpriteUV3, vSprite3, vSpriteViewDir3, spriteSize);
+      vec2 uv1 = parallaxUV(vSpriteUV1, vSprite1, vSpriteViewDir1, spriteSize, vSpritesWeight.x);
+      vec2 uv2 = parallaxUV(vSpriteUV2, vSprite2, vSpriteViewDir2, spriteSize, vSpritesWeight.y);
+      vec2 uv3 = parallaxUV(vSpriteUV3, vSprite3, vSpriteViewDir3, spriteSize, vSpritesWeight.z);
 
       vec4 blendedColor = blendImpostorSamples(uv1, uv2, uv3);
 
       if (blendedColor.a <= alphaClamp) discard;
-      // blendedColor.a = (blendedColor.a - alphaClamp) / (1.0 - alphaClamp);
 
       // remove transparency
       blendedColor = vec4(vec3(blendedColor.rgb) / (blendedColor.a), 1.0);

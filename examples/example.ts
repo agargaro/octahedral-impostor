@@ -4,8 +4,8 @@ import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { exportTextureFromRenderTarget, OctahedronImpostor, OctahedronImpostorMaterialGenerator } from '../src/index.js';
 
-const mainCamera = new OrthographicCameraAuto(20).translateZ(100);
 // const mainCamera = new OrthographicCameraAuto(20).translateZ(100).translateY(100).translateX(100);
+const mainCamera = new OrthographicCameraAuto(20).translateZ(100);
 const scene = new Scene();
 const main = new Main(); // init renderer and other stuff
 const controls = new OrbitControls(mainCamera, main.renderer.domElement);
@@ -42,8 +42,8 @@ Asset.load<GLTF>(GLTFLoader, 'cliff.gltf').then((gltf) => {
 
   const config = { showImpostor: true };
   const gui = new GUI();
-  gui.add(material, 'parallaxScale', 0, 0.2, 0.01);
-  gui.add(material, 'alphaClamp', 0, 0.7, 0.01);
+  gui.add(material, 'parallaxScale', 0, 0.5, 0.01);
+  gui.add(material, 'alphaClamp', 0, 0.8, 0.01);
   gui.add(config, 'showImpostor').onChange((value) => {
     mesh.visible = !value;
     impostor.visible = value;
