@@ -7,8 +7,8 @@ export class OctahedronImpostorMaterialGenerator {
   public readonly material: OctahedralImpostorMaterial;
   public albedo: Texture = null;
   public depthMap: Texture = null;
-  protected _albedoRT: WebGLRenderTarget = null;
-  protected _depthMapRT: WebGLRenderTarget = null;
+  public _albedoRT: WebGLRenderTarget = null; // TODO
+  public _depthMapRT: WebGLRenderTarget = null;
   protected _spritesPerSide: number = null;
 
   constructor() {

@@ -31,9 +31,7 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
     flat varying vec3 vSpriteNormal3;
 
     vec2 encodeHemiOctaDirection(vec3 direction) {
-      vec3 octant = sign(direction);
-      float sum = dot(direction, octant);
-      vec3 octahedron = direction / sum;    
+      vec3 octahedron = direction / dot(direction, sign(direction));    
       return vec2(1.0 + octahedron.x + octahedron.z, 1.0 + octahedron.z - octahedron.x) * vec2(0.5);
     }
 
@@ -79,15 +77,19 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
       );
     }
 
-    vec2 projectToPlaneUV(vec3 normal, vec3 tangent, vec3 bitangent, vec3 pivotToCamera, vec3 vertexToCamera) {
-      float pivotDot = dot(normal, pivotToCamera);
-      float vertexDot = dot(normal, vertexToCamera);
-      vec3 offset = vertexToCamera * (pivotDot / vertexDot) - pivotToCamera;
-      vec2 uv = vec2(dot(tangent, offset), dot(bitangent, offset));
+    vec2 projectToPlaneUV(vec3 normal, vec3 tangent, vec3 bitangent, vec3 cameraPosition, vec3 viewDir) {
+      float denom = dot(viewDir, normal);
+      if (abs(denom) < 0.0001) return vec2(0.5);
+
+      float t = -dot(cameraPosition, normal) / denom;
+       if (t < 0.0) return vec2(0.5);
+
+      vec3 hit = cameraPosition + viewDir * t;
+      vec2 uv = vec2(dot(tangent, hit), dot(bitangent, hit));
       return uv + 0.5;
     }
 
-    vec2 projectDirectionToBasis(vec3 dir, vec3 tangent, vec3 bitangent) // TODO we can try to use this instead
+    vec2 projectDirectionToBasis(vec3 dir, vec3 tangent, vec3 bitangent)
     {
       return vec2(dot(dir, tangent), dot(dir, bitangent));
     }
@@ -99,8 +101,7 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
       vec3 cameraDir = normalize(cameraPosLocal);
 
       vec3 projectedVertex = projectVertex(cameraDir);
-      vec3 vertexToCamera = cameraPosLocal + projectedVertex; // TODO check this sign
-      vec3 viewDirLocal = normalize(vertexToCamera);
+      vec3 viewDirLocal = normalize(projectedVertex - cameraPosLocal);
 
       vec2 grid = encodeDirection(cameraDir) * spritesMinusOne; 
       vec2 gridFloor = min(floor(grid), spritesMinusOne);
@@ -126,13 +127,13 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
       computePlaneBasis(spriteNormal2, planeX2, planeY2);
       computePlaneBasis(spriteNormal3, planeX3, planeY3);
 
-      vSpriteUV1 = projectToPlaneUV(spriteNormal1, planeX1, planeY1, cameraPosLocal, vertexToCamera); 
-      vSpriteUV2 = projectToPlaneUV(spriteNormal2, planeX2, planeY2, cameraPosLocal, vertexToCamera); 
-      vSpriteUV3 = projectToPlaneUV(spriteNormal3, planeX3, planeY3, cameraPosLocal, vertexToCamera); 
+      vSpriteUV1 = projectToPlaneUV(spriteNormal1, planeX1, planeY1, cameraPosLocal, viewDirLocal);
+      vSpriteUV2 = projectToPlaneUV(spriteNormal2, planeX2, planeY2, cameraPosLocal, viewDirLocal); 
+      vSpriteUV3 = projectToPlaneUV(spriteNormal3, planeX3, planeY3, cameraPosLocal, viewDirLocal); 
 
-      vSpriteViewDir1 = projectDirectionToBasis(-viewDirLocal, planeX1, planeY1).xy;
-      vSpriteViewDir2 = projectDirectionToBasis(-viewDirLocal, planeX2, planeY2).xy;
-      vSpriteViewDir3 = projectDirectionToBasis(-viewDirLocal, planeX3, planeY3).xy;
+      vSpriteViewDir1 = projectDirectionToBasis(viewDirLocal, planeX1, planeY1).xy;
+      vSpriteViewDir2 = projectDirectionToBasis(viewDirLocal, planeX2, planeY2).xy;
+      vSpriteViewDir3 = projectDirectionToBasis(viewDirLocal, planeX3, planeY3).xy;
 
       gl_Position = projectionMatrix * modelViewMatrix * vec4(projectedVertex, 1.0);
     }
@@ -165,20 +166,29 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
 
     vec4 blendImpostorSamples(vec2 uv1, vec2 uv2, vec2 uv3)
     {
-      vec4 sprite1 = texture2D(albedo, uv1, 0.0);
-      vec4 sprite2 = texture2D(albedo, uv2, 0.0);
-      vec4 sprite3 = texture2D(albedo, uv3, 0.0);
+      vec2 dx1 = dFdx(uv1); vec2 dy1 = dFdy(uv1);
+      vec2 dx2 = dFdx(uv2); vec2 dy2 = dFdy(uv2);
+      vec2 dx3 = dFdx(uv3); vec2 dy3 = dFdy(uv3);
+
+      vec4 sprite1 = textureGrad(albedo, uv1, dx1, dy1);
+      vec4 sprite2 = textureGrad(albedo, uv2, dx2, dy2);
+      vec4 sprite3 = textureGrad(albedo, uv3, dx3, dy3);
+
+      // vec4 sprite1 = texture2D(albedo, uv1, 0.0);
+      // vec4 sprite2 = texture2D(albedo, uv2, 0.0);
+      // vec4 sprite3 = texture2D(albedo, uv3, 0.0);
+
       return sprite1 * vSpritesWeight.x + sprite2 * vSpritesWeight.y + sprite3 * vSpritesWeight.z;
     }
 
-    vec2 parallaxUV(vec2 uv, vec2 gridIndex, vec2 viewDir, float spriteSize)
+    vec2 parallaxUV(vec2 uv, vec2 gridIndex, vec2 viewDir, float spriteSize) 
     {
       vec2 spriteUv = spriteSize * (gridIndex + uv);
-      float depth = 1.0 - texture2D(depthMap, spriteUv, 0.0).x; // TODO invert depth map color
+      float depth = 1.0 - texture(depthMap, spriteUv).x; //-0.5?
 
       vec2 parallaxOffset = viewDir * depth * parallaxScale;
       uv = clamp(uv + parallaxOffset, vec2(0.0), vec2(1.0));
-
+      
       return spriteSize * (gridIndex + uv);
     }
 
@@ -192,6 +202,7 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
       vec4 blendedColor = blendImpostorSamples(uv1, uv2, uv3);
 
       if (blendedColor.a <= alphaClamp) discard;
+      // blendedColor.a = (blendedColor.a - alphaClamp) / (1.0 - alphaClamp);
 
       gl_FragColor = blendedColor;
       #include <tonemapping_fragment>

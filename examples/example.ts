@@ -2,7 +2,7 @@ import { Asset, Main, OrthographicCameraAuto } from '@three.ez/main';
 import { AmbientLight, HemisphereLight, Scene } from 'three';
 import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
-import { OctahedronImpostor, OctahedronImpostorMaterialGenerator } from '../src/index.js';
+import { exportTextureFromRenderTarget, OctahedronImpostor, OctahedronImpostorMaterialGenerator } from '../src/index.js';
 
 const mainCamera = new OrthographicCameraAuto(20).translateZ(100).translateY(100).translateX(100);
 const scene = new Scene();
@@ -28,12 +28,13 @@ Asset.load<GLTF>(GLTFLoader, 'cliff.gltf').then((gltf) => {
   });
 
   // exportTextureFromRenderTarget(main.renderer, materialRT._albedoRT, 'normal');
+  // exportTextureFromRenderTarget(main.renderer, materialRT._depthMapRT, 'depth');
 
-  const impostor = new OctahedronImpostor(material).translateX(2).translateY(0.9);
+  const impostor = new OctahedronImpostor(material).translateX(2).translateY(0.5);
   impostor.scale.multiplyScalar(2);
   scene.add(impostor);
 
-  mesh.scale.divideScalar(4);
+  mesh.scale.divideScalar(5);
 
   main.createView({ scene, camera: mainCamera, backgroundColor: 'cyan' });
 
