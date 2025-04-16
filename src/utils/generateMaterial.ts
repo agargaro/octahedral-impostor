@@ -1,7 +1,25 @@
 import { Texture, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { createAlbedo, createDepthMap, CreateTextureAtlasParams } from '../utils/createTextureAtlas.js';
-import { exportTextureFromRenderTarget } from '../utils/exportTexture.js';
+import { exportTextureFromRenderTarget } from './exportTextureFromRenderTarget.js';
 import { OctahedralImpostorMaterial } from './octahedralImpostorMaterial.js';
+
+export function generateOctahedronImpostorMaterial(
+  renderer: WebGLRenderer,
+  target: WebGLRenderTarget,
+  options: CreateTextureAtlasParams
+): OctahedralImpostorMaterial {
+  const { useHemiOctahedron } = options;
+  const material = new OctahedralImpostorMaterial({
+    albedo: target.texture,
+    normalDepthMap: target.texture,
+    parallaxScale: 0.1,
+    alphaClamp: 0.5,
+    spritesPerSide: options.spritesPerSide,
+    useHemiOctaheron: useHemiOctahedron
+  });
+
+  return material;
+}
 
 // TODO remove this class and make a utils method instead
 export class OctahedronImpostorMaterialGenerator {
@@ -31,7 +49,8 @@ export class OctahedronImpostorMaterialGenerator {
       normalDepthMap: this.depthMap,
       parallaxScale: 0.1,
       alphaClamp: 0.5,
-      spritesPerSide: this._spritesPerSide
+      spritesPerSide: this._spritesPerSide,
+      useHemiOctaheron: true
     });
 
     // TODO add it to create too

@@ -1,6 +1,6 @@
 import { Camera, MeshDepthMaterial, NoColorSpace, Object3D, OrthographicCamera, PerspectiveCamera, Sphere, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
-import { computeBoundingSphereFromObject } from './boundingSphere.js';
-import { hemiOctaGridToDir, octaGridToDir } from './octahedron.js';
+import { computeObjectBoundingSphere } from './computeObjectBoundingSphere.js';
+import { hemiOctaGridToDir, octaGridToDir } from './octahedronUtils.js';
 
 // TODO: convert to MeshBasicMaterial or create custoom shader
 // TODO: fix empty pixel? (example 2048 / 6 = 341.33 pixel) set clear color
@@ -90,7 +90,7 @@ function create(renderer: WebGLRenderer, params: CreateTextureAtlasParams, onBef
   const countPerSideMinusOne = countPerSide - 1;
   const spriteSize = atlasSize / countPerSide;
 
-  computeBoundingSphereFromObject(target, bSphere, true); // TODO optiona flag for the last 'true'
+  computeObjectBoundingSphere(target, bSphere, true); // TODO optiona flag for the last 'true'
 
   const cameraFactor = params.cameraFactor ?? 1;
   const camera = getCamera();

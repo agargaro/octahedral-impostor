@@ -23,6 +23,7 @@ export function octaGridToDir(grid: Vector2, target = new Vector3()): Vector3 {
   return target;
 }
 
+// TODO remove it
 export function hemiOctaDirToGrid(dir: Vector3, target = new Vector2()): Vector2 {
   octant.set(Math.sign(dir.x), Math.sign(dir.y), Math.sign(dir.z));
   const sum = dir.dot(octant); // TODO dir should be normalized?

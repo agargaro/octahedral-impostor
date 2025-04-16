@@ -35,7 +35,12 @@ vec4 blendImpostorSamples(vec2 uv1, vec2 uv2, vec2 uv3) {
 
 vec2 parallaxUV(vec2 uv, vec2 gridIndex, vec2 viewDir, float spriteSize, float weight) {
   vec2 spriteUv = spriteSize * (gridIndex + uv);
-  float depth = 1.0 - texture(normalDepthMap, spriteUv).y;
+
+  #ifdef EZ_USE_NORMAL
+  float depth = 1.0 - texture(normalDepthMap, spriteUv).a;
+  #else
+  float depth = 1.0 - texture(normalDepthMap, spriteUv).r;
+  #endif
 
   vec2 parallaxOffset = viewDir * depth * parallaxScale * weight;
   uv = clamp(uv + parallaxOffset, vec2(0.0), vec2(1.0));
@@ -55,8 +60,9 @@ void main() {
   if(blendedColor.a <= alphaClamp)
     discard;
 
-      // remove transparency
+  #ifndef EZ_TRANSPARENT
   blendedColor = vec4(vec3(blendedColor.rgb) / (blendedColor.a), 1.0);
+  #endif
 
   gl_FragColor = blendedColor;
 

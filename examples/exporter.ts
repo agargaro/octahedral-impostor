@@ -1,7 +1,7 @@
 import { Asset, Main } from '@three.ez/main';
 import { BufferGeometry, BufferGeometryLoader, Mesh, MeshNormalMaterial } from 'three';
 import { createAlbedo } from '../src/utils/createTextureAtlas.js';
-import { exportTextureFromRenderTarget } from '../src/utils/exportTexture.js';
+import { exportTextureFromRenderTarget } from '../src/utils/exportTextureFromRenderTarget.js';
 
 const main = new Main();
 // const treeGLTF = await Asset.load<GLTF>(GLTFLoader, 'tree.gltf');
