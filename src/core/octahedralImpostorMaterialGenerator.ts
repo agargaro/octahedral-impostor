@@ -3,17 +3,14 @@ import { createAlbedo, createDepthMap, CreateTextureAtlasParams } from '../utils
 import { exportTextureFromRenderTarget } from '../utils/exportTexture.js';
 import { OctahedralImpostorMaterial } from './octahedralImpostorMaterial.js';
 
+// TODO remove this class and make a utils method instead
 export class OctahedronImpostorMaterialGenerator {
-  public readonly material: OctahedralImpostorMaterial;
+  public material: OctahedralImpostorMaterial = null;
   public albedo: Texture = null;
   public depthMap: Texture = null;
   public _albedoRT: WebGLRenderTarget = null; // TODO
   public _depthMapRT: WebGLRenderTarget = null;
   protected _spritesPerSide: number = null;
-
-  constructor() {
-    this.material = new OctahedralImpostorMaterial();
-  }
 
   public load(albedo: Texture, depthMap: Texture, spritesPerSide: number): OctahedralImpostorMaterial {
     this.albedo = albedo;
@@ -29,13 +26,15 @@ export class OctahedronImpostorMaterialGenerator {
     this.albedo = this._albedoRT.texture;
     this.depthMap = this._depthMapRT.texture;
 
+    this.material = new OctahedralImpostorMaterial({
+      albedo: this.albedo,
+      normalDepthMap: this.depthMap,
+      parallaxScale: 0.1,
+      alphaClamp: 0.5,
+      spritesPerSide: this._spritesPerSide
+    });
+
     // TODO add it to create too
-    const material = this.material;
-    material.albedo = this.albedo;
-    material.depthMap = this.depthMap;
-    material.parallaxScale = 0.1;
-    material.alphaClamp = 0.5;
-    material.spritesPerSide = this._spritesPerSide;
 
     return this.material;
   }

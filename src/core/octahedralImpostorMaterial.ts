@@ -1,11 +1,15 @@
 import { ShaderMaterial, Texture } from 'three';
 
 export interface OctahedralImpostorMaterialParameters {
-  albedo?: Texture;
-  depthMap?: Texture;
-  spritesPerSide?: number;
+  spritesPerSide: number;
+  albedo: Texture;
+  normalDepthMap?: Texture;
+  ormMap?: Texture;
+  transparent?: boolean;
   parallaxScale?: number;
   alphaClamp?: number;
+  // transparentBlending?: boolean; TODO
+  // borderClamp?: boolean; TODO
 }
 
 export class OctahedralImpostorMaterial extends ShaderMaterial {
@@ -13,7 +17,6 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
   public isOctahedralImpostorMaterial = true;
 
   public override vertexShader = /* glsl */`
-    // uniform bool isFullSphere;
     uniform float spritesPerSide;
 
     flat varying vec4 vSpritesWeight;
@@ -26,28 +29,33 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
     varying vec2 vSpriteViewDir1;
     varying vec2 vSpriteViewDir2;
     varying vec2 vSpriteViewDir3;
-    flat varying vec3 vSpriteNormal1;
-    flat varying vec3 vSpriteNormal2;
-    flat varying vec3 vSpriteNormal3;
-
-    vec2 encodeHemiOctaDirection(vec3 direction) {
-      vec3 octahedron = direction / dot(direction, sign(direction));    
-      return vec2(1.0 + octahedron.x + octahedron.z, 1.0 + octahedron.z - octahedron.x) * vec2(0.5);
-    }
+    
+    #ifdef EZ_USE_NORMAL
+      flat varying vec3 vSpriteNormal1;
+      flat varying vec3 vSpriteNormal2;
+      flat varying vec3 vSpriteNormal3;
+    #endif
 
     vec2 encodeDirection(vec3 direction) {
-      return encodeHemiOctaDirection(direction);
-    }
-
-    vec3 decodeHemiOctaGrid(vec2 gridUV) {
-      vec3 position = vec3(gridUV.x - gridUV.y, 0.0, -1.0 + gridUV.x + gridUV.y);
-      position.y = 1.0 - abs(position.x) - abs(position.z);
-      return position;
+      #ifdef EZ_USE_HEMI_OCTAHEDRON
+        vec3 octahedron = direction / dot(direction, sign(direction));    
+        return vec2(1.0 + octahedron.x + octahedron.z, 1.0 + octahedron.z - octahedron.x) * vec2(0.5);
+      #else
+        //
+      #endif
     }
 
     vec3 decodeDirection(vec2 gridIndex, vec2 spriteCountMinusOne) {
       vec2 gridUV = gridIndex / spriteCountMinusOne;
-      return normalize(decodeHemiOctaGrid(gridUV));
+
+      #ifdef EZ_USE_HEMI_OCTAHEDRON
+        vec3 position = vec3(gridUV.x - gridUV.y, 0.0, -1.0 + gridUV.x + gridUV.y);
+        position.y = 1.0 - abs(position.x) - abs(position.z);
+      #else
+        //
+      #endif
+
+      return normalize(position);
     }
 
     void computePlaneBasis(vec3 normal, out vec3 tangent, out vec3 bitangent)
@@ -55,8 +63,9 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
       vec3 up = vec3(0.0, 1.0, 0.0);
 
       if (normal.y > 0.999) up = vec3(-1.0, 0.0, 0.0);
-      // // only if no hemiOcta
-      // if (normal.y < -0.999) up = vec3(1.0, 0.0, 0.0);
+      #ifndef EZ_USE_HEMI_OCTAHEDRON
+        if (normal.y < -0.999) up = vec3(1.0, 0.0, 0.0);
+      #endif
 
       tangent = normalize(cross(up, normal));
       bitangent = cross(normal, tangent);
@@ -114,9 +123,11 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
       vec3 spriteNormal2 = decodeDirection(vSprite2, spritesMinusOne);
       vec3 spriteNormal3 = decodeDirection(vSprite3, spritesMinusOne);
 
-      vSpriteNormal1 = normalMatrix * spriteNormal1;
-      vSpriteNormal2 = normalMatrix * spriteNormal2; 
-      vSpriteNormal3 = normalMatrix * spriteNormal3;
+      #ifdef EZ_USE_NORMAL
+        vSpriteNormal1 = normalMatrix * spriteNormal1;
+        vSpriteNormal2 = normalMatrix * spriteNormal2; 
+        vSpriteNormal3 = normalMatrix * spriteNormal3;
+      #endif
 
       vec3 planeX1, planeY1, planeX2, planeY2, planeX3, planeY3;
 
@@ -137,12 +148,11 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
   `;
 
   public override fragmentShader = /* glsl */`
-    // precision highp float;
-
     uniform sampler2D albedo;
-    uniform sampler2D depthMap;
-    // uniform sampler2D normalMap;
-    // uniform sampler2D ormMap;
+    uniform sampler2D normalDepthMap;
+    #ifdef EZ_USE_ORM
+      uniform sampler2D ormMap;
+    #endif
     uniform float spritesPerSide;
     uniform float parallaxScale;
     uniform float alphaClamp;
@@ -157,9 +167,12 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
     varying vec2 vSpriteViewDir1;
     varying vec2 vSpriteViewDir2;
     varying vec2 vSpriteViewDir3;
-    flat varying vec3 vSpriteNormal1;
-    flat varying vec3 vSpriteNormal2;
-    flat varying vec3 vSpriteNormal3;
+
+    #ifdef EZ_USE_NORMAL
+      flat varying vec3 vSpriteNormal1;
+      flat varying vec3 vSpriteNormal2;
+      flat varying vec3 vSpriteNormal3;
+    #endif
 
     vec4 blendImpostorSamples(vec2 uv1, vec2 uv2, vec2 uv3)
     {
@@ -173,7 +186,7 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
     vec2 parallaxUV(vec2 uv, vec2 gridIndex, vec2 viewDir, float spriteSize, float weight) 
     {
       vec2 spriteUv = spriteSize * (gridIndex + uv);
-      float depth = 1.0 - texture(depthMap, spriteUv).x;
+      float depth = 1.0 - texture(normalDepthMap, spriteUv).y;
 
       vec2 parallaxOffset = viewDir * depth * parallaxScale * weight;
       uv = clamp(uv + parallaxOffset, vec2(0.0), vec2(1.0));
@@ -204,8 +217,8 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
   public get albedo(): Texture { return this.uniforms.albedo.value; }
   public set albedo(texture) { this.uniforms.albedo.value = texture; }
 
-  public get depthMap(): Texture { return this.uniforms.depthMap.value; }
-  public set depthMap(texture) { this.uniforms.depthMap.value = texture; }
+  public get normalDepthMap(): Texture { return this.uniforms.normalDepthMap.value; }
+  public set normalDepthMap(texture) { this.uniforms.normalDepthMap.value = texture; }
 
   public get spritesPerSide(): number { return this.uniforms.spritesPerSide.value; }
   public set spritesPerSide(value) { this.uniforms.spritesPerSide.value = value; }
@@ -216,15 +229,26 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
   public get alphaClamp(): number { return this.uniforms.alphaClamp.value; }
   public set alphaClamp(value) { this.uniforms.alphaClamp.value = value; }
 
-  constructor(parameters: OctahedralImpostorMaterialParameters = {}) {
+  constructor(parameters: OctahedralImpostorMaterialParameters) {
+    if (!parameters) throw new Error('OctahedralImpostorMaterial: parameters is required.');
+    if (!parameters.spritesPerSide) throw new Error('OctahedralImpostorMaterial: spritesPerSide is required.');
+    if (!parameters.albedo) throw new Error('OctahedralImpostorMaterial: albedo is required.');
+
     super();
 
-    // this.transparent = true;
-    // this.depthWrite = false;
+    if (parameters.transparent) {
+      this.transparent = true;
+      this.depthWrite = false;
+      this.defines.EZ_TRANSPARENT = '';
+    }
+
+    this.defines.EZ_USE_HEMI_OCTAHEDRON = '';
+    // this.defines.EZ_USE_ORM = ''; // TODO
+    // this.defines.EZ_USE_NORMAL = ''; // TODO
 
     this.uniforms = {
       albedo: { value: parameters.albedo },
-      depthMap: { value: parameters.depthMap },
+      normalDepthMap: { value: parameters.normalDepthMap },
       spritesPerSide: { value: parameters.spritesPerSide },
       parallaxScale: { value: parameters.parallaxScale },
       alphaClamp: { value: parameters.alphaClamp }
