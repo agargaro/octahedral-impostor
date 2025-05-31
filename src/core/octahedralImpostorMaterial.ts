@@ -16,7 +16,7 @@ export interface OctahedralImpostorUniforms {
 
 export interface OctahedralImpostorMaterialParameters {
   spritesPerSide: number;
-  useHemiOctaheron: boolean;
+  useHemiOctahedron: boolean;
   albedo: Texture;
   normalDepthMap: Texture;
   ormMap?: Texture;
@@ -77,18 +77,18 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
   constructor(parameters: OctahedralImpostorMaterialParameters) {
     if (!parameters) throw new Error('OctahedralImpostorMaterial: parameters is required.');
     if (!parameters.spritesPerSide) throw new Error('OctahedralImpostorMaterial: spritesPerSide is required.');
-    if (!parameters.useHemiOctaheron) throw new Error('OctahedralImpostorMaterial: useHemiOctaheron is required.');
+    if (!parameters.useHemiOctahedron) throw new Error('OctahedralImpostorMaterial: useHemiOctaheron is required.');
     if (!parameters.albedo) throw new Error('OctahedralImpostorMaterial: albedo is required.');
     if (!parameters.normalDepthMap) throw new Error('OctahedralImpostorMaterial: normalDepthMap is required.');
 
     super();
 
     this.spritesPerSide = parameters.spritesPerSide;
-    this.useHemiOctaheron = parameters.useHemiOctaheron;
+    this.useHemiOctaheron = parameters.useHemiOctahedron;
     this.albedo = parameters.albedo;
     this.normalDepthMap = parameters.normalDepthMap;
     this.ormMap = parameters.ormMap;
-    this.transparent = parameters.transparent ?? false;
+    this.transparent = parameters.transparent ?? true; // TODO conf e metti default false
     this.parallaxScale = parameters.parallaxScale ?? 0.15;
     this.alphaClamp = parameters.alphaClamp ?? 0.5;
   }
@@ -110,5 +110,19 @@ export class OctahedralImpostorMaterial extends ShaderMaterial {
     this.needsUpdate = true;
     if (value) this.defines[key] = '';
     else delete this.defines[key];
+  }
+
+  // @ts-expect-error Property 'clone' is not assignable to the same property in base type 'ShaderMaterial'.
+  public override clone(): OctahedralImpostorMaterial {
+    return new OctahedralImpostorMaterial({
+      spritesPerSide: this.spritesPerSide,
+      useHemiOctahedron: this.useHemiOctaheron,
+      albedo: this.albedo,
+      normalDepthMap: this.normalDepthMap,
+      ormMap: this.ormMap,
+      transparent: this.transparent,
+      parallaxScale: this.parallaxScale,
+      alphaClamp: this.alphaClamp
+    });
   }
 }

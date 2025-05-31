@@ -1,4 +1,4 @@
-import { Camera, MeshDepthMaterial, NoColorSpace, Object3D, OrthographicCamera, PerspectiveCamera, Sphere, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { MeshDepthMaterial, NoColorSpace, Object3D, OrthographicCamera, Sphere, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { computeObjectBoundingSphere } from './computeObjectBoundingSphere.js';
 import { hemiOctaGridToDir, octaGridToDir } from './octahedronUtils.js';
 
@@ -17,15 +17,14 @@ type OldRendererData = { renderTarget: WebGLRenderTarget; oldPixelRatio: number;
  */
 export interface CreateTextureAtlasParams {
   /**
+   * The WebGL renderer used to render the object from multiple directions.
+   */
+  renderer: WebGLRenderer;
+  /**
    * Whether to use a hemispherical octahedral projection instead of a full octahedral one.
    * Use this to generate views covering only the upper hemisphere of the object.
    */
   useHemiOctahedron: boolean;
-  /**
-   * Whether to render views using a perspective camera.
-   * If false, an orthographic camera will be used instead.
-   */
-  usePerspectiveCamera: boolean;
   /**
    * The 3D object to render from multiple directions.
    * Typically a `Mesh`, `Group`, or any `Object3D` hierarchy.
@@ -51,23 +50,22 @@ export interface CreateTextureAtlasParams {
   cameraFactor?: number;
 }
 
-const perspectiveCamera = new PerspectiveCamera();
-const orthographicCamera = new OrthographicCamera();
+const camera = new OrthographicCamera();
 const bSphere = new Sphere();
 const oldScissor = new Vector4();
 const oldViewport = new Vector4();
 const coords = new Vector2();
 
-export function createAlbedo(renderer: WebGLRenderer, params: CreateTextureAtlasParams): WebGLRenderTarget {
-  return create(renderer, params);
+export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarget {
+  return create(params);
 }
 
-export function createDepthMap(renderer: WebGLRenderer, params: CreateTextureAtlasParams): WebGLRenderTarget {
+export function createDepthMap(params: CreateTextureAtlasParams): WebGLRenderTarget {
   const { target } = params;
   // const oldParent = target.parent;
   // const scene = new Scene(); // se è già scena è diiverso.. inoltre cacha questo oggetto
 
-  return create(renderer, params, () => {
+  return create(params, () => {
     // target.parent = scene;
     // target.overrideMaterial = new MeshNormalMaterial(); // custom shader per avere anche depth (deve usare la normalMap se c'è già)
     (target as any).overrideMaterial = new MeshDepthMaterial(); // custom shader per avere anche depth (deve usare la normalMap se c'è già)
@@ -77,13 +75,12 @@ export function createDepthMap(renderer: WebGLRenderer, params: CreateTextureAtl
   });
 }
 
-function create(renderer: WebGLRenderer, params: CreateTextureAtlasParams, onBeforeRender?: () => void, onAfterRender?: () => void): WebGLRenderTarget {
-  const { target, useHemiOctahedron, usePerspectiveCamera } = params;
+function create(params: CreateTextureAtlasParams, onBeforeRender?: () => void, onAfterRender?: () => void): WebGLRenderTarget {
+  const { renderer, target, useHemiOctahedron } = params;
 
   if (!renderer) throw new Error('"renderer" is mandatory.');
   if (!target) throw new Error('"target" is mandatory.');
   if (useHemiOctahedron == null) throw new Error('"useHemiOctahedron" is mandatory.');
-  if (perspectiveCamera == null) throw new Error('"usePerspectiveCamera" is mandatory.');
 
   const atlasSize = params.textureSize ?? 2048;
   const countPerSide = params.spritesPerSide ?? 16;
@@ -93,7 +90,7 @@ function create(renderer: WebGLRenderer, params: CreateTextureAtlasParams, onBef
   computeObjectBoundingSphere(target, bSphere, true); // TODO optiona flag for the last 'true'
 
   const cameraFactor = params.cameraFactor ?? 1;
-  const camera = getCamera();
+  updateCamera();
 
   const { renderTarget, oldPixelRatio, oldScissorTest, oldClearAlpha } = setupRenderer();
   if (onBeforeRender) onBeforeRender();
@@ -125,24 +122,17 @@ function create(renderer: WebGLRenderer, params: CreateTextureAtlasParams, onBef
     renderer.render(target, camera);
   }
 
-  function getCamera(): Camera {
-    if (usePerspectiveCamera) {
-      // TODO
-      return perspectiveCamera;
-    }
+  function updateCamera(): void {
+    camera.left = -bSphere.radius;
+    camera.right = bSphere.radius;
+    camera.top = bSphere.radius;
+    camera.bottom = -bSphere.radius;
 
-    orthographicCamera.left = -bSphere.radius;
-    orthographicCamera.right = bSphere.radius;
-    orthographicCamera.top = bSphere.radius;
-    orthographicCamera.bottom = -bSphere.radius;
+    camera.zoom = cameraFactor;
+    camera.near = 0.001;
+    camera.far = bSphere.radius * 2 + 0.001;
 
-    orthographicCamera.zoom = cameraFactor;
-    orthographicCamera.near = 0.001;
-    orthographicCamera.far = bSphere.radius * 2 + 0.001;
-
-    orthographicCamera.updateProjectionMatrix();
-
-    return orthographicCamera;
+    camera.updateProjectionMatrix();
   }
 
   // TODO questo diventa inutile ora, rivedere

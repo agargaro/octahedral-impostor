@@ -57,7 +57,7 @@ void main() {
 
   vec4 blendedColor = blendImpostorSamples(uv1, uv2, uv3);
 
-  if(blendedColor.a <= alphaClamp)
+  if (blendedColor.a <= alphaClamp)
     discard;
 
   #ifndef EZ_TRANSPARENT

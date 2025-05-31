@@ -14,7 +14,7 @@ const target = new Mesh(geometry, new MeshNormalMaterial());
 
 target.updateMatrixWorld(true);
 
-const renderTarget = createAlbedo(main.renderer, { target, useHemiOctahedron: true, usePerspectiveCamera: false, spritesPerSide: 16 });
-// const renderTarget = createAlbedo(main.renderer, target, { useHemiOctahedron: true, usePerspectiveCamera: false, spritesPerSide: 16 });
+const renderTarget = createAlbedo(main.renderer, { target, useHemiOctahedron: true, spritesPerSide: 16 });
+// const renderTarget = createAlbedo(main.renderer, target, { useHemiOctahedron: true, spritesPerSide: 16 });
 
 exportTextureFromRenderTarget(main.renderer, renderTarget, 'albedo');
