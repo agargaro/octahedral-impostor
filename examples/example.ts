@@ -11,7 +11,7 @@ const controls = new OrbitControls(mainCamera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
 controls.update();
 
-Asset.load<GLTF>(GLTFLoader, 'cliff.gltf').then((gltf) => {
+Asset.load<GLTF>(GLTFLoader, 'https://threejs.org/examples/models/gltf/Soldier.glb').then((gltf) => {
   const mesh = gltf.scene;
 
   const directionalLight = new DirectionalLight('white', 4.0);
@@ -39,6 +39,8 @@ Asset.load<GLTF>(GLTFLoader, 'cliff.gltf').then((gltf) => {
     target: mesh,
     useHemiOctahedron: true,
     transparent: true,
+    spritesPerSide: 16,
+    textureSize: 8192,
     baseType: MeshLambertMaterial
   });
   scene.add(impostor);

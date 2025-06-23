@@ -25,7 +25,7 @@ vec2 encodeDirection(vec3 direction) {
 
   #else
 
-  //
+  // TODO
 
   #endif
 }

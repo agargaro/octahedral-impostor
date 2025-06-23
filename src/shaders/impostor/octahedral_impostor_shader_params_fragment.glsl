@@ -2,7 +2,9 @@
 
 uniform float spritesPerSide;
 
-flat varying vec2 vSprite;
+flat varying vec2 vSprite1;
+varying vec2 vUv; // TODO remove
 
-varying vec2 vUv;
+#ifdef EZ_USE_NORMAL
 varying mat3 vNormalMatrix;
+#endif
