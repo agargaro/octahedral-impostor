@@ -2,7 +2,7 @@
 
 uniform float spritesPerSide;
 flat varying vec2 vSprite;
-varying vec2 vUV;
+varying vec2 vUv;
 varying mat3 vNormalMatrix;
 
 vec2 encodeDirection(vec3 direction) {

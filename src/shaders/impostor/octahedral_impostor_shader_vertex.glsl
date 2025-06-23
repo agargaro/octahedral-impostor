@@ -20,7 +20,7 @@ computePlaneBasis(spriteNormal, planeX1, planeY1);
 
 vec3 projectedVertex2 = projectVertex(spriteNormal);
 mvPosition = modelViewMatrix * vec4(projectedVertex2, 1.0);
-vUV = uv;
+vUv = uv;
 vNormalMatrix = normalMatrix;
 
 gl_Position = projectionMatrix * mvPosition;
