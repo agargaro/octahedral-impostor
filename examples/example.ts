@@ -34,7 +34,13 @@ Asset.load<GLTF>(GLTFLoader, 'cliff.gltf').then((gltf) => {
 
   scene.add(mesh, directionalLight);
 
-  const impostor = new OctahedralImpostor({ renderer: main.renderer, target: mesh, useHemiOctahedron: true, baseType: MeshLambertMaterial });
+  const impostor = new OctahedralImpostor({
+    renderer: main.renderer,
+    target: mesh,
+    useHemiOctahedron: true,
+    transparent: true,
+    baseType: MeshLambertMaterial
+  });
   scene.add(impostor);
 
   mesh.visible = false;
