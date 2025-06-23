@@ -1,13 +1,9 @@
-import { MeshDepthMaterial, NoColorSpace, Object3D, OrthographicCamera, Sphere, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { FloatType, GLSL3, IUniform, LinearFilter, Material, Mesh, MeshStandardMaterial, NearestFilter, NoColorSpace, Object3D, OrthographicCamera, ShaderMaterial, Sphere, Texture, UnsignedByteType, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { computeObjectBoundingSphere } from './computeObjectBoundingSphere.js';
 import { hemiOctaGridToDir, octaGridToDir } from './octahedronUtils.js';
 
-// TODO: convert to MeshBasicMaterial or create custoom shader
-// TODO: fix empty pixel? (example 2048 / 6 = 341.33 pixel) set clear color
-// TODO: rename parameters
-// TODO: handle transparency if no clear color?
-// TODO: pack depth in the alpha channel?
-// TODO: use ColorRapresentation instead of Color
+import fragmentShader from '../shaders/atlas_texture/octahedral_atlas_fragment.glsl';
+import vertexShader from '../shaders/atlas_texture/octahedral_atlas_vertex.glsl';
 
 type OldRendererData = { renderTarget: WebGLRenderTarget; oldPixelRatio: number; oldScissorTest: boolean; oldClearAlpha: number };
 
@@ -50,32 +46,32 @@ export interface CreateTextureAtlasParams {
   cameraFactor?: number;
 }
 
+export interface TextureAtlas {
+  /**
+   * The WebGL render target used to render the object from multiple directions.
+   */
+  renderTarget: WebGLRenderTarget;
+  /**
+   * The albedo texture containing the rendered views of the object.
+   * Each sprite cell contains a unique view from a different direction.
+   */
+  albedo: Texture;
+  /**
+   * The normal and depth map texture.
+   * Contains normals and depth information for each sprite cell.
+   * This can be used for lighting and depth effects.
+   */
+  normalDepth: Texture;
+}
+
 const camera = new OrthographicCamera();
 const bSphere = new Sphere();
 const oldScissor = new Vector4();
 const oldViewport = new Vector4();
 const coords = new Vector2();
+const userDataMaterialKey = 'ez_originalMaterial';
 
-export function createAlbedo(params: CreateTextureAtlasParams): WebGLRenderTarget {
-  return create(params);
-}
-
-export function createDepthMap(params: CreateTextureAtlasParams): WebGLRenderTarget {
-  const { target } = params;
-  // const oldParent = target.parent;
-  // const scene = new Scene(); // se è già scena è diiverso.. inoltre cacha questo oggetto
-
-  return create(params, () => {
-    // target.parent = scene;
-    // target.overrideMaterial = new MeshNormalMaterial(); // custom shader per avere anche depth (deve usare la normalMap se c'è già)
-    (target as any).overrideMaterial = new MeshDepthMaterial(); // custom shader per avere anche depth (deve usare la normalMap se c'è già)
-  }, () => {
-    (target as any).overrideMaterial = null;
-    // target.parent = oldParent;
-  });
-}
-
-function create(params: CreateTextureAtlasParams, onBeforeRender?: () => void, onAfterRender?: () => void): WebGLRenderTarget {
+export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtlas {
   const { renderer, target, useHemiOctahedron } = params;
 
   if (!renderer) throw new Error('"renderer" is mandatory.');
@@ -87,13 +83,14 @@ function create(params: CreateTextureAtlasParams, onBeforeRender?: () => void, o
   const countPerSideMinusOne = countPerSide - 1;
   const spriteSize = atlasSize / countPerSide;
 
-  computeObjectBoundingSphere(target, bSphere, true); // TODO optiona flag for the last 'true'
+  // with some models, the bounding sphere was not accurate so we rercompute it
+  computeObjectBoundingSphere(target, bSphere, true);
 
   const cameraFactor = params.cameraFactor ?? 1;
   updateCamera();
 
   const { renderTarget, oldPixelRatio, oldScissorTest, oldClearAlpha } = setupRenderer();
-  if (onBeforeRender) onBeforeRender();
+  overrideTargetMaterial(target);
 
   for (let row = 0; row < countPerSide; row++) {
     for (let col = 0; col < countPerSide; col++) {
@@ -101,10 +98,48 @@ function create(params: CreateTextureAtlasParams, onBeforeRender?: () => void, o
     }
   }
 
-  if (onAfterRender) onAfterRender();
   restoreRenderer();
+  restoreTargetMaterial(target);
 
-  return renderTarget;
+  return {
+    renderTarget,
+    albedo: renderTarget.textures[0],
+    normalDepth: renderTarget.textures[1]
+  };
+
+  function overrideTargetMaterial(target: Object3D): void {
+    target.traverse((mesh) => {
+      if ((mesh as Mesh).material) {
+        const material = (mesh as Mesh).material;
+        mesh.userData[userDataMaterialKey] = material;
+        const overrideMaterial = Array.isArray(material) ? material.map((mat) => createMaterial(mat)) : createMaterial(material);
+        (mesh as Mesh).material = overrideMaterial;
+      }
+    });
+  }
+
+  function createMaterial(material: Material): ShaderMaterial {
+    const uniforms: { [uniform: string]: IUniform } = {
+      u_albedo_tex: { value: (material as MeshStandardMaterial).map }
+    };
+
+    return new ShaderMaterial({
+      uniforms,
+      vertexShader,
+      fragmentShader,
+      glslVersion: GLSL3
+      // side: DoubleSide,
+    });
+  }
+
+  function restoreTargetMaterial(target: Object3D): void {
+    target.traverse((mesh) => {
+      if (mesh.userData[userDataMaterialKey]) {
+        (mesh as Mesh).material = mesh.userData[userDataMaterialKey];
+        delete mesh.userData[userDataMaterialKey];
+      }
+    });
+  }
 
   function renderView(col: number, row: number): void {
     coords.set(col / (countPerSideMinusOne), row / (countPerSideMinusOne));
@@ -135,7 +170,6 @@ function create(params: CreateTextureAtlasParams, onBeforeRender?: () => void, o
     camera.updateProjectionMatrix();
   }
 
-  // TODO questo diventa inutile ora, rivedere
   function setupRenderer(): OldRendererData {
     const oldPixelRatio = renderer.getPixelRatio();
     const oldScissorTest = renderer.getScissorTest();
@@ -143,7 +177,21 @@ function create(params: CreateTextureAtlasParams, onBeforeRender?: () => void, o
     renderer.getScissor(oldScissor);
     renderer.getViewport(oldViewport);
 
-    const renderTarget = new WebGLRenderTarget(atlasSize, atlasSize, { colorSpace: NoColorSpace }); // TODO confirm these parameters and reuse same renderTarget
+    const renderTarget = new WebGLRenderTarget(atlasSize, atlasSize, { count: 2, generateMipmaps: false });
+
+    const albedo = 0;
+    const normalDepth = 1;
+
+    renderTarget.textures[albedo].minFilter = LinearFilter;
+    renderTarget.textures[albedo].magFilter = LinearFilter;
+    renderTarget.textures[albedo].type = UnsignedByteType;
+    renderTarget.textures[albedo].colorSpace = renderer.outputColorSpace;
+
+    renderTarget.textures[normalDepth].minFilter = NearestFilter;
+    renderTarget.textures[normalDepth].magFilter = NearestFilter;
+    renderTarget.textures[normalDepth].type = FloatType;
+    renderTarget.textures[albedo].colorSpace = NoColorSpace;
+
     renderer.setRenderTarget(renderTarget);
     renderer.setScissorTest(true);
     renderer.setPixelRatio(1);
