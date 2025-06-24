@@ -1,7 +1,6 @@
 #include <clipping_planes_pars_vertex>
 
 uniform float spritesPerSide;
-varying vec2 vUv; // TODO remove
 
 flat varying vec2 vSprite1;
 varying vec2 vSpriteUV1;

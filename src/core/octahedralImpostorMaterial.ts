@@ -50,8 +50,8 @@ export function createOctahedralImpostorMaterial<T extends Material>(parameters:
   const material = new parameters.baseType();
   material.isOctahedralImpostorMaterial = true;
   material.transparent = parameters.transparent ?? false;
-  material.map = albedo;
-  material.normalMap = normalDepth; // TODO only if lights
+  (material as any).map = albedo; // TODO remove any
+  (material as any).normalMap = normalDepth; // TODO only if lights
 
   material.ezImpostorDefines = {};
 
@@ -84,7 +84,7 @@ function overrideMaterialCompilation(material: Material): void {
 
     shader.vertexShader = shader.vertexShader
       .replace('#include <clipping_planes_pars_vertex>', shaderChunkParamsVertex)
-      .replace('#include <shadowmap_vertex>', shaderChunkVertex);
+      .replace('#include <project_vertex>', shaderChunkVertex);
 
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <clipping_planes_pars_fragment>', shaderChunkParamsFragment)
