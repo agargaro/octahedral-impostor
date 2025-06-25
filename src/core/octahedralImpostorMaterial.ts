@@ -14,8 +14,6 @@ export type MaterialConstructor<T extends Material> = new () => T;
 
 export interface OctahedralImpostorUniforms {
   spritesPerSide: IUniform<number>;
-  // albedo: IUniform<Texture>;
-  // normalDepthMap: IUniform<Texture>;
   // ormMap: IUniform<Texture>;
   parallaxScale: IUniform<number>;
   alphaClamp: IUniform<number>;
@@ -63,8 +61,6 @@ export function createOctahedralImpostorMaterial<T extends Material>(parameters:
 
   material.ezImpostorUniforms = {
     spritesPerSide: { value: parameters.spritesPerSide ?? 16 }, // TODO config default value
-    // albedo: { value: albedo },
-    // normalDepthMap: { value: normalDepth }, // TODO only if lights
     // ormMap: { value: null },
     parallaxScale: { value: parameters.parallaxScale ?? 0.1 },
     alphaClamp: { value: parameters.alphaClamp ?? 0.5 }
@@ -108,30 +104,6 @@ function overrideMaterialCompilation(material: Material): void {
 }
 
 // export class OctahedralImpostorMaterial extends ShaderMaterial {
-
-//   public get spritesPerSide(): number { return this.uniforms.spritesPerSide.value; }
-//   public set spritesPerSide(value) { this.setUniform('spritesPerSide', value); }
-
-//   public get useHemiOctahedron(): boolean { return this._useHemiOctahedron; }
-//   public set useHemiOctahedron(value) {
-//     this._useHemiOctahedron = value;
-//     this.updateDefines(value, 'EZ_USE_HEMI_OCTAHEDRON');
-//   }
-
-//   public get albedo(): Texture { return this.uniforms.albedo.value; }
-//   public set albedo(texture) { this.setUniform('albedo', texture); }
-
-//   public get normalDepthMap(): Texture { return this.uniforms.normalDepthMap.value; }
-//   public set normalDepthMap(texture) {
-//     this.setUniform('normalDepthMap', texture);
-//     // this.updateDefines(texture?.format === RGBAFormat, 'EZ_USE_NORMAL'); TODO when we'll pack the normal map and depth map
-//   }
-
-//   public get ormMap(): Texture { return this.uniforms.ormMap.value; }
-//   public set ormMap(texture) {
-//     this.setUniform('ormMap', texture);
-//     this.updateDefines(texture, 'EZ_USE_ORM');
-//   }
 
 //   // @ts-expect-error: It's defined as a property in class, but is overridden here as an accessor.
 //   public override get transparent(): boolean { return this._transparent; }

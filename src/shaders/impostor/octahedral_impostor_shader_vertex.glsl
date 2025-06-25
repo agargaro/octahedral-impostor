@@ -31,7 +31,7 @@ vSpriteNormal3 = normalMatrix * spriteNormal3;
 #endif
 
 vec3 planeX1, planeY1, planeX2, planeY2, planeX3, planeY3;
-computePlaneBasis(spriteNormal, planeX1, planeY1);
+computePlaneBasis(spriteNormal1, planeX1, planeY1);
 computePlaneBasis(spriteNormal2, planeX2, planeY2);
 computePlaneBasis(spriteNormal3, planeX3, planeY3);
 

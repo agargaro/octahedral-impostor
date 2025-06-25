@@ -11,7 +11,7 @@ const controls = new OrbitControls(mainCamera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
 controls.update();
 
-Asset.load<GLTF>(GLTFLoader, 'https://threejs.org/examples/models/gltf/Soldier.glb').then((gltf) => {
+Asset.load<GLTF>(GLTFLoader, 'cliff.gltf').then((gltf) => {
   const mesh = gltf.scene;
 
   const directionalLight = new DirectionalLight('white', 4.0);
@@ -37,8 +37,9 @@ Asset.load<GLTF>(GLTFLoader, 'https://threejs.org/examples/models/gltf/Soldier.g
   const impostor = new OctahedralImpostor({
     renderer: main.renderer,
     target: mesh,
+    blendSprites: true,
     useHemiOctahedron: true,
-    transparent: true,
+    transparent: false,
     spritesPerSide: 16,
     textureSize: 8192,
     baseType: MeshLambertMaterial
@@ -51,8 +52,8 @@ Asset.load<GLTF>(GLTFLoader, 'https://threejs.org/examples/models/gltf/Soldier.g
 
   const config = { showImpostor: true };
   const gui = new GUI();
-  // gui.add(impostor.material, 'parallaxScale', 0, 0.5, 0.01);
-  // gui.add(impostor.material, 'alphaClamp', 0, 0.8, 0.01);
+  gui.add(impostor.material.ezImpostorUniforms.parallaxScale, 'value', 0, 0.5, 0.01).name('Parallax Scale');
+  gui.add(impostor.material.ezImpostorUniforms.alphaClamp, 'value', 0, 0.8, 0.01).name('Alpha Clamp');
   gui.add(impostor.material, 'transparent');
   gui.add(config, 'showImpostor').onChange((value) => {
     mesh.visible = !value;
