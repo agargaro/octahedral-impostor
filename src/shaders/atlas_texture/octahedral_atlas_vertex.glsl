@@ -1,14 +1,17 @@
-precision highp float;
+precision highp float; // do we need this?
 precision highp int;
 
-out vec2 vUv;
-out vec3 vNormal;
-varying float vViewZ;
+varying vec2 vUv;
+varying vec3 vNormal;
+varying vec2 vHighPrecisionZW;
 
 void main() {
-    vec4 mvPosition = viewMatrix * modelMatrix * vec4(position,1.0);
     vUv = uv;
-    vNormal = normalize( mat3(modelMatrix) * vec3(normal) );
-    vViewZ = -mvPosition.z;
+    vNormal = normalize(mat3(modelMatrix) * vec3(normal));
+
+    vec4 mvPosition = vec4(position, 1.0);
+    mvPosition = modelViewMatrix * mvPosition;
     gl_Position = projectionMatrix * mvPosition;
+
+    vHighPrecisionZW = gl_Position.zw;
 }

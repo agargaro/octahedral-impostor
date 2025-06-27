@@ -10,7 +10,7 @@ const controls = new OrbitControls(mainCamera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
 controls.update();
 
-const gltf = await Asset.load<GLTF>(GLTFLoader, 'https://threejs.org/examples/models/gltf/Soldier.glb');
+const gltf = await Asset.load<GLTF>(GLTFLoader, 'cliff.gltf');
 
 const mesh = gltf.scene;
 scene.add(mesh);

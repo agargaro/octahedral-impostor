@@ -44,7 +44,7 @@ vec4 blendImpostorSamples(vec2 uv1, vec2 uv2, vec2 uv3) {
 vec2 parallaxUV(vec2 uv, vec2 gridIndex, vec2 viewDir, float spriteSize, float weight) {
   vec2 spriteUv = spriteSize * (gridIndex + uv);
 
-  float depth = 1.0 - texture(normalMap, spriteUv).a; // TODO
+  float depth = texture(normalMap, spriteUv).a;
 
   vec2 parallaxOffset = viewDir * depth * parallaxScale * weight;
   uv = clamp(uv + parallaxOffset, vec2(0.0), vec2(1.0));
@@ -57,7 +57,7 @@ vec2 parallaxUV(vec2 uv, vec2 gridIndex, vec2 viewDir, float spriteSize, float w
 vec2 parallaxUV(vec2 uv, vec2 gridIndex, vec2 viewDir, float spriteSize) {
   vec2 spriteUv = spriteSize * (gridIndex + uv);
 
-  float depth = 1.0 - texture(normalMap, spriteUv).a; // TODO
+  float depth = texture(normalMap, spriteUv).a;
 
   vec2 parallaxOffset = viewDir * depth * parallaxScale;
   uv = clamp(uv + parallaxOffset, vec2(0.0), vec2(1.0));
