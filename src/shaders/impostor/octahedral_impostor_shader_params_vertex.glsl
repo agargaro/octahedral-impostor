@@ -19,15 +19,11 @@ flat varying vec3 vSpriteNormal2;
 flat varying vec3 vSpriteNormal3;
 #endif
 
-#ifdef EZ_USE_NORMAL
-varying mat3 vNormalMatrix;
-#endif
-
 vec2 encodeDirection(vec3 direction) {
   #ifdef EZ_USE_HEMI_OCTAHEDRON
 
   vec3 octahedron = direction / dot(direction, sign(direction));
-  return vec2(1.0 + octahedron.x + octahedron.z, 1.0 + octahedron.z - octahedron.x) * vec2(0.5);
+  return vec2(1.0 + octahedron.x + octahedron.z, 1.0 + octahedron.z - octahedron.x) * 0.5;
 
   #else
 
@@ -80,6 +76,12 @@ void computeSpritesWeight(vec2 gridFract) {
 
 vec2 projectToPlaneUV(vec3 normal, vec3 tangent, vec3 bitangent, vec3 cameraPosition, vec3 viewDir) {
   float denom = dot(viewDir, normal);
+  
+  // // Avoid division by zero when view direction is parallel to plane
+  // if (abs(denom) < 1e-6) {
+  //   return vec2(0.5); // Return center UV as fallback
+  // }
+  
   float t = -dot(cameraPosition, normal) / denom;
 
   vec3 hit = cameraPosition + viewDir * t;

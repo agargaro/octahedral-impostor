@@ -24,9 +24,9 @@ vec3 spriteNormal2 = decodeDirection(vSprite2, spritesMinusOne);
 vec3 spriteNormal3 = decodeDirection(vSprite3, spritesMinusOne);
 
 #ifdef EZ_USE_NORMAL
-vSpriteNormal1 = normalMatrix * spriteNormal1;
-vSpriteNormal2 = normalMatrix * spriteNormal2;
-vSpriteNormal3 = normalMatrix * spriteNormal3;
+vSpriteNormal1 = spriteNormal1;
+vSpriteNormal2 = spriteNormal2;
+vSpriteNormal3 = spriteNormal3;
 #endif
 
 vec3 planeX1, planeY1, planeX2, planeY2, planeX3, planeY3;
@@ -41,8 +41,6 @@ vSpriteUV3 = projectToPlaneUV(spriteNormal3, planeX3, planeY3, cameraPosLocal, v
 vSpriteViewDir1 = projectDirectionToBasis(-viewDirLocal, spriteNormal1, planeX1, planeY1).xy;
 vSpriteViewDir2 = projectDirectionToBasis(-viewDirLocal, spriteNormal2, planeX2, planeY2).xy;
 vSpriteViewDir3 = projectDirectionToBasis(-viewDirLocal, spriteNormal3, planeX3, planeY3).xy;
-
-vNormalMatrix = normalMatrix;
 
 vec4 mvPosition = modelViewMatrix * vec4(projectedVertex, 1.0);
 

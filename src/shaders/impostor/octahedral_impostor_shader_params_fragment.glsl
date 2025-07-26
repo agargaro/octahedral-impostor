@@ -4,6 +4,10 @@ uniform float spritesPerSide;
 uniform float parallaxScale;
 uniform float alphaClamp;
 
+#ifdef EZ_USE_NORMAL
+uniform mat3 normalMatrix; // this can be already used with same shader
+#endif
+
 #ifdef EZ_USE_ORM
 uniform sampler2D ormMap;
 #endif
@@ -20,7 +24,6 @@ varying vec2 vSpriteViewDir2;
 varying vec2 vSpriteViewDir3;
 
 #ifdef EZ_USE_NORMAL
-varying mat3 vNormalMatrix;
 flat varying vec3 vSpriteNormal1;
 flat varying vec3 vSpriteNormal2;
 flat varying vec3 vSpriteNormal3;
