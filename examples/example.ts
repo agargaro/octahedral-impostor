@@ -38,7 +38,6 @@ Asset.load<GLTF>(GLTFLoader, 'cliff.gltf').then((gltf) => {
   const impostor = new OctahedralImpostor({
     renderer: main.renderer,
     target: mesh,
-    blendSprites: true,
     useHemiOctahedron: true,
     transparent: true,
     spritesPerSide: 16,

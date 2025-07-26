@@ -6,7 +6,7 @@ import shaderChunkParamsVertex from '../shaders/impostor/octahedral_impostor_sha
 import shaderChunkVertex from '../shaders/impostor/octahedral_impostor_shader_vertex.glsl';
 import { createTextureAtlas, CreateTextureAtlasParams } from '../utils/createTextureAtlas.js';
 
-export type OctahedralImpostorDefinesKeys = 'EZ_USE_HEMI_OCTAHEDRON' | 'EZ_USE_NORMAL' | 'EZ_USE_ORM' | 'EZ_TRANSPARENT' | 'EZ_BLEND_SPRITES';
+export type OctahedralImpostorDefinesKeys = 'EZ_USE_HEMI_OCTAHEDRON' | 'EZ_USE_NORMAL' | 'EZ_USE_ORM' | 'EZ_TRANSPARENT';
 export type OctahedralImpostorDefines = { [key in OctahedralImpostorDefinesKeys]?: boolean };
 
 export type UniformValue<T> = T extends IUniform<infer U> ? U : never;
@@ -25,7 +25,6 @@ export interface CreateOctahedralImpostor<T extends Material> extends Octahedral
 
 export interface OctahedralImpostorMaterial {
   transparent?: boolean;
-  blendSprites?: boolean;
   parallaxScale?: number;
   alphaClamp?: number;
 }
@@ -55,7 +54,6 @@ export function createOctahedralImpostorMaterial<T extends Material>(parameters:
 
   if (parameters.useHemiOctahedron) material.ezImpostorDefines.EZ_USE_HEMI_OCTAHEDRON = true;
   if (parameters.transparent) material.ezImpostorDefines.EZ_TRANSPARENT = true;
-  if (parameters.blendSprites) material.ezImpostorDefines.EZ_BLEND_SPRITES = true;
   material.ezImpostorDefines.EZ_USE_NORMAL = true; // TODO only if lights
   // material.ezImpostorDefines.EZ_USE_ORM = true; // TODO only if lights
 
@@ -97,9 +95,8 @@ function overrideMaterialCompilation(material: Material): void {
     const hemiOcta = material.ezImpostorDefines.EZ_USE_HEMI_OCTAHEDRON;
     const useNormal = material.ezImpostorDefines.EZ_USE_NORMAL;
     const useOrm = material.ezImpostorDefines.EZ_USE_ORM;
-    const blendSprites = material.ezImpostorDefines.EZ_BLEND_SPRITES;
 
-    return `ez_${hemiOcta}_${material.transparent}_${useNormal}_${useOrm}_${blendSprites}_${customProgramCacheKeyBase.call(material)}`;
+    return `ez_${hemiOcta}_${material.transparent}_${useNormal}_${useOrm}_${customProgramCacheKeyBase.call(material)}`;
   };
 }
 

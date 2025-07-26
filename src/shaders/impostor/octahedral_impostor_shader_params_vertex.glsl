@@ -6,7 +6,6 @@ flat varying vec2 vSprite1;
 varying vec2 vSpriteUV1;
 varying vec2 vSpriteViewDir1;
 
-#ifdef EZ_BLEND_SPRITES
 flat varying vec4 vSpritesWeight;
 flat varying vec2 vSprite2;
 flat varying vec2 vSprite3;
@@ -14,14 +13,11 @@ varying vec2 vSpriteUV2;
 varying vec2 vSpriteUV3;
 varying vec2 vSpriteViewDir2;
 varying vec2 vSpriteViewDir3;
-#endif
 
 #ifdef EZ_USE_NORMAL
 flat varying vec3 vSpriteNormal1;
-#ifdef EZ_BLEND_SPRITES
 flat varying vec3 vSpriteNormal2;
 flat varying vec3 vSpriteNormal3;
-#endif
 #endif
 
 #ifdef EZ_USE_NORMAL
@@ -79,11 +75,9 @@ vec3 projectVertex(vec3 normal) {
   return x * position.x + y * position.y;
 }
 
-#ifdef EZ_BLEND_SPRITES
 void computeSpritesWeight(vec2 gridFract) {
   vSpritesWeight = vec4(min(1.0 - gridFract.x, 1.0 - gridFract.y), abs(gridFract.x - gridFract.y), min(gridFract.x, gridFract.y), ceil(gridFract.x - gridFract.y));
 }
-#endif
 
 vec2 projectToPlaneUV(vec3 normal, vec3 tangent, vec3 bitangent, vec3 cameraPosition, vec3 viewDir) {
   float denom = dot(viewDir, normal);
@@ -94,8 +88,6 @@ vec2 projectToPlaneUV(vec3 normal, vec3 tangent, vec3 bitangent, vec3 cameraPosi
   return uv + 0.5;
 }
 
-#ifdef EZ_BLEND_SPRITES
 vec3 projectDirectionToBasis(vec3 dir, vec3 normal, vec3 tangent, vec3 bitangent) {
   return vec3(dot(dir, tangent), dot(dir, bitangent), dot(dir, normal));
 }
-#endif

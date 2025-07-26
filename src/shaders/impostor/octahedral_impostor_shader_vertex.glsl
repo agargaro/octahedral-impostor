@@ -11,7 +11,6 @@ vec3 viewDirLocal = normalize(projectedVertex - cameraPosLocal);
 vec2 grid = encodeDirection(cameraDir) * spritesMinusOne;
 vec2 gridFloor = min(floor(grid), spritesMinusOne);
 
-#ifdef EZ_BLEND_SPRITES
 vec2 gridFract = fract(grid);
 
 computeSpritesWeight(gridFract);
@@ -42,18 +41,6 @@ vSpriteUV3 = projectToPlaneUV(spriteNormal3, planeX3, planeY3, cameraPosLocal, v
 vSpriteViewDir1 = projectDirectionToBasis(-viewDirLocal, spriteNormal1, planeX1, planeY1).xy;
 vSpriteViewDir2 = projectDirectionToBasis(-viewDirLocal, spriteNormal2, planeX2, planeY2).xy;
 vSpriteViewDir3 = projectDirectionToBasis(-viewDirLocal, spriteNormal3, planeX3, planeY3).xy;
-#else
-vSprite1 = gridFloor;
-vSpriteUV1 = uv;
-vSpriteViewDir1 = viewDirLocal.xy; // FIX
-
-vec3 spriteNormal = decodeDirection(vSprite1, spritesMinusOne);
-#ifdef EZ_USE_NORMAL
-vSpriteNormal1 = normalMatrix * spriteNormal; 
-#endif
-
-projectedVertex = projectVertex(spriteNormal);
-#endif
 
 vNormalMatrix = normalMatrix;
 

@@ -12,7 +12,6 @@ flat varying vec2 vSprite1;
 varying vec2 vSpriteUV1;
 varying vec2 vSpriteViewDir1;
 
-#ifdef EZ_BLEND_SPRITES
 flat varying vec4 vSpritesWeight;
 flat varying vec2 vSprite2;
 flat varying vec2 vSprite3;
@@ -20,18 +19,13 @@ varying vec2 vSpriteUV2;
 varying vec2 vSpriteUV3;
 varying vec2 vSpriteViewDir2;
 varying vec2 vSpriteViewDir3;
-#endif
 
 #ifdef EZ_USE_NORMAL
 varying mat3 vNormalMatrix;
-#ifdef EZ_BLEND_SPRITES
 flat varying vec3 vSpriteNormal1;
 flat varying vec3 vSpriteNormal2;
 flat varying vec3 vSpriteNormal3;
 #endif
-#endif
-
-#ifdef EZ_BLEND_SPRITES
 
 vec4 blendImpostorSamples(vec2 uv1, vec2 uv2, vec2 uv3) {
   vec4 sprite1 = texture(map, uv1);
@@ -57,18 +51,3 @@ vec2 parallaxUV(vec2 uv_f, vec2 frame, vec2 xy_f, float frame_size, float weight
 	uv_f =  frame_size * (frame + uv_f);
 	return clamp(uv_f, vec2(0), vec2(1));
 }
-
-#else
-
-vec2 parallaxUV(vec2 uv, vec2 gridIndex, vec2 viewDir, float spriteSize) {
-  vec2 spriteUv = spriteSize * (gridIndex + uv);
-
-  float depth = texture(normalMap, spriteUv).a;
-
-  vec2 parallaxOffset = viewDir * depth * parallaxScale;
-  uv = clamp(uv + parallaxOffset, vec2(0.0), vec2(1.0));
-
-  return spriteSize * (gridIndex + uv);
-}
-
-#endif
