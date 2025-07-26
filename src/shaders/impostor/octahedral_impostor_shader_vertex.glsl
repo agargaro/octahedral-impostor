@@ -39,13 +39,13 @@ vSpriteUV1 = projectToPlaneUV(spriteNormal1, planeX1, planeY1, cameraPosLocal, v
 vSpriteUV2 = projectToPlaneUV(spriteNormal2, planeX2, planeY2, cameraPosLocal, viewDirLocal);
 vSpriteUV3 = projectToPlaneUV(spriteNormal3, planeX3, planeY3, cameraPosLocal, viewDirLocal);
 
-vSpriteViewDir1 = projectDirectionToBasis(viewDirLocal, planeX1, planeY1).xy;
-vSpriteViewDir2 = projectDirectionToBasis(viewDirLocal, planeX2, planeY2).xy;
-vSpriteViewDir3 = projectDirectionToBasis(viewDirLocal, planeX3, planeY3).xy;
+vSpriteViewDir1 = projectDirectionToBasis(-viewDirLocal, spriteNormal1, planeX1, planeY1).xy;
+vSpriteViewDir2 = projectDirectionToBasis(-viewDirLocal, spriteNormal2, planeX2, planeY2).xy;
+vSpriteViewDir3 = projectDirectionToBasis(-viewDirLocal, spriteNormal3, planeX3, planeY3).xy;
 #else
 vSprite1 = gridFloor;
 vSpriteUV1 = uv;
-vSpriteViewDir1 = viewDirLocal.xy;
+vSpriteViewDir1 = viewDirLocal.xy; // FIX
 
 vec3 spriteNormal = decodeDirection(vSprite1, spritesMinusOne);
 #ifdef EZ_USE_NORMAL

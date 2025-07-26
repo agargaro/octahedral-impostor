@@ -14,10 +14,8 @@ vec4 blendedColor = texture2D(map, uv1);
 
 if(blendedColor.a <= alphaClamp) discard;
 
-#ifdef EZ_BLEND_SPRITES
-#ifndef EZ_TRANSPARENT
+#if defined(EZ_BLEND_SPRITES) && !defined(EZ_TRANSPARENT)
 blendedColor = vec4(vec3(blendedColor.rgb) / (blendedColor.a), 1.0);
-#endif
 #endif
 
 diffuseColor *= blendedColor;

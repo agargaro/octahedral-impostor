@@ -95,7 +95,7 @@ vec2 projectToPlaneUV(vec3 normal, vec3 tangent, vec3 bitangent, vec3 cameraPosi
 }
 
 #ifdef EZ_BLEND_SPRITES
-vec2 projectDirectionToBasis(vec3 dir, vec3 tangent, vec3 bitangent) {
-  return vec2(dot(dir, tangent), dot(dir, bitangent));
+vec3 projectDirectionToBasis(vec3 dir, vec3 normal, vec3 tangent, vec3 bitangent) {
+  return vec3(dot(dir, tangent), dot(dir, bitangent), dot(dir, normal));
 }
 #endif

@@ -41,15 +41,21 @@ vec4 blendImpostorSamples(vec2 uv1, vec2 uv2, vec2 uv3) {
   return sprite1 * vSpritesWeight.x + sprite2 * vSpritesWeight.y + sprite3 * vSpritesWeight.z;
 }
 
-vec2 parallaxUV(vec2 uv, vec2 gridIndex, vec2 viewDir, float spriteSize, float weight) {
-  vec2 spriteUv = spriteSize * (gridIndex + uv);
+vec2 parallaxUV(vec2 uv_f, vec2 frame, vec2 xy_f, float frame_size, float weight) {
+  // vec2 spriteUv = frame_size * (frame + uv_f);
+  // float depth = texture(normalMap, spriteUv).a;
+  // vec2 parallaxOffset = xy_f * depth * parallaxScale; // * weight;
+  // uv_f = clamp(uv_f + parallaxOffset, vec2(0.0), vec2(1.0));
+  // return frame_size * (frame + uv_f);
 
-  float depth = texture(normalMap, spriteUv).a;
+  uv_f = clamp(uv_f, vec2(0), vec2(1));
+	vec2 uv_quad = frame_size * (frame + uv_f);
+  float n_depth = max(0.0, 0.5 - texture(normalMap, uv_quad).a);
 
-  vec2 parallaxOffset = viewDir * depth * parallaxScale * weight;
-  uv = clamp(uv + parallaxOffset, vec2(0.0), vec2(1.0));
-
-  return spriteSize * (gridIndex + uv);
+  uv_f = xy_f * n_depth * parallaxScale * (1.0 - weight) + uv_f;
+	uv_f = clamp(uv_f, vec2(0), vec2(1));
+	uv_f =  frame_size * (frame + uv_f);
+	return clamp(uv_f, vec2(0), vec2(1));
 }
 
 #else

@@ -1,5 +1,5 @@
 import { Asset, Main, OrthographicCameraAuto } from '@three.ez/main';
-import { DirectionalLight, MeshLambertMaterial, Scene } from 'three';
+import { AmbientLight, DirectionalLight, MeshLambertMaterial, Scene } from 'three';
 import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { OctahedralImpostor } from '../src/core/octahedralImpostor.js';
@@ -11,10 +11,11 @@ const controls = new OrbitControls(mainCamera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
 controls.update();
 
-Asset.load<GLTF>(GLTFLoader, 'https://threejs.org/examples/models/gltf/Soldier.glb').then((gltf) => {
+Asset.load<GLTF>(GLTFLoader, 'cliff.gltf').then((gltf) => {
   const mesh = gltf.scene;
 
   const directionalLight = new DirectionalLight('white', 4.0);
+  // const ambientLight = new AmbientLight('white', 2.0);
 
   const lightPosition = {
     azimuth: 0,
@@ -41,7 +42,7 @@ Asset.load<GLTF>(GLTFLoader, 'https://threejs.org/examples/models/gltf/Soldier.g
     useHemiOctahedron: true,
     transparent: true,
     spritesPerSide: 16,
-    textureSize: 8192,
+    textureSize: 2048,
     parallaxScale: 0,
     baseType: MeshLambertMaterial
   });
@@ -53,8 +54,8 @@ Asset.load<GLTF>(GLTFLoader, 'https://threejs.org/examples/models/gltf/Soldier.g
 
   const config = { showImpostor: true };
   const gui = new GUI();
-  gui.add(impostor.material.ezImpostorUniforms.parallaxScale, 'value', 0, 0.5, 0.01).name('Parallax Scale');
-  gui.add(impostor.material.ezImpostorUniforms.alphaClamp, 'value', 0, 0.8, 0.01).name('Alpha Clamp');
+  gui.add(impostor.material.ezImpostorUniforms.parallaxScale, 'value', 0, 0.3, 0.01).name('Parallax Scale');
+  gui.add(impostor.material.ezImpostorUniforms.alphaClamp, 'value', 0, 0.5, 0.01).name('Alpha Clamp');
   gui.add(impostor.material, 'transparent');
   gui.add(config, 'showImpostor').onChange((value) => {
     mesh.visible = !value;
