@@ -2,15 +2,14 @@
 
 uniform float spritesPerSide;
 
-flat varying vec2 vSprite1;
-varying vec2 vSpriteUV1;
-varying vec2 vSpriteViewDir1;
-
 flat varying vec4 vSpritesWeight;
+flat varying vec2 vSprite1;
 flat varying vec2 vSprite2;
 flat varying vec2 vSprite3;
+varying vec2 vSpriteUV1;
 varying vec2 vSpriteUV2;
 varying vec2 vSpriteUV3;
+varying vec2 vSpriteViewDir1;
 varying vec2 vSpriteViewDir2;
 varying vec2 vSpriteViewDir3;
 
@@ -32,7 +31,7 @@ vec2 encodeDirection(vec3 direction) {
 
   #else
 
-  // TODO
+  // TODO: Implement full octahedral encoding
 
   #endif
 }
@@ -47,7 +46,7 @@ vec3 decodeDirection(vec2 gridIndex, vec2 spriteCountMinusOne) {
 
   #else
 
-    //
+    // TODO: Implement full octahedral decoding
 
   #endif
 

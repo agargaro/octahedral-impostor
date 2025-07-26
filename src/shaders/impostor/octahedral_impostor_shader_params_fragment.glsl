@@ -8,15 +8,14 @@ uniform float alphaClamp;
 uniform sampler2D ormMap;
 #endif
 
-flat varying vec2 vSprite1;
-varying vec2 vSpriteUV1;
-varying vec2 vSpriteViewDir1;
-
 flat varying vec4 vSpritesWeight;
+flat varying vec2 vSprite1;
 flat varying vec2 vSprite2;
 flat varying vec2 vSprite3;
+varying vec2 vSpriteUV1;
 varying vec2 vSpriteUV2;
 varying vec2 vSpriteUV3;
+varying vec2 vSpriteViewDir1;
 varying vec2 vSpriteViewDir2;
 varying vec2 vSpriteViewDir3;
 
