@@ -1,10 +1,12 @@
-import { Asset, Main, OrthographicCameraAuto, PerspectiveCameraAuto } from '@three.ez/main';
-import { DirectionalLight, MeshBasicMaterial, MeshLambertMaterial, MeshNormalMaterial, Scene } from 'three';
+import { InstancedMesh2 } from '@three.ez/instanced-mesh';
+import { Asset, Main, PerspectiveCameraAuto } from '@three.ez/main';
+import { DirectionalLight, Material, Mesh, MeshLambertMaterial, PlaneGeometry, Scene } from 'three';
 import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { OctahedralImpostor } from '../src/core/octahedralImpostor.js';
 
-const mainCamera = new PerspectiveCameraAuto(20).translateZ(100);
+const mainCamera = new PerspectiveCameraAuto(50, 0.1, 5000).translateZ(20).translateY(5);
 const scene = new Scene();
 const main = new Main(); // init renderer and other stuff
 const controls = new OrbitControls(mainCamera, main.renderer.domElement);
@@ -38,34 +40,46 @@ Asset.load<GLTF>(GLTFLoader, 'palm.gltf').then((gltf) => {
     renderer: main.renderer,
     target: mesh,
     useHemiOctahedron: true,
-    transparent: true,
+    transparent: false,
     spritesPerSide: 16,
     textureSize: 2048,
     parallaxScale: 0,
     baseType: MeshLambertMaterial
   });
-  scene.add(impostor);
 
   mesh.visible = false;
 
   main.createView({ scene, camera: mainCamera, backgroundColor: 'cyan' });
 
-  const config = { showImpostor: true };
   const gui = new GUI();
   gui.add(impostor.material.ezImpostorUniforms.parallaxScale, 'value', 0, 0.3, 0.01).name('Parallax Scale');
   gui.add(impostor.material.ezImpostorUniforms.alphaClamp, 'value', 0, 0.5, 0.01).name('Alpha Clamp');
   gui.add(impostor.material, 'transparent').onChange((value) => impostor.material.needsUpdate = true);
-  gui.add(config, 'showImpostor').onChange((value) => {
-    mesh.visible = !value;
-    impostor.visible = value;
-  });
   const lightFolder = gui.addFolder('Directional Light');
   lightFolder.add(directionalLight, 'intensity', 0, 10, 0.01).name('Intensity');
   lightFolder.add(lightPosition, 'azimuth', -180, 180, 1).name('Azimuth').onChange(() => lightPosition.update());
   lightFolder.add(lightPosition, 'elevation', -90, 90, 1).name('Elevation').onChange(() => lightPosition.update());
 
-  // mesh.querySelectorAll('Mesh').forEach((m) => {
-  //   const base = m.material as MeshBasicMaterial;
-  //   m.material = new MeshBasicMaterial({ alphaTest: base.alphaTest, transparent: base.transparent, map: base.map, side: base.side });
-  // }); // todo remove
+  // INSTANCED MESH
+
+  const mergedGeo = mergeGeometries(mesh.children.map((x) => (x as Mesh).geometry), true);
+
+  const iMesh = new InstancedMesh2(mergedGeo, mesh.children.map((x) => (x as Mesh).material as Material), { createEntities: true });
+
+  iMesh.addInstances(50000, (obj) => {
+    obj.position.x = Math.random() * 2000 - 1000;
+    obj.position.z = Math.random() * 2000 - 1000;
+    obj.rotateY(Math.random() * Math.PI * 2);
+  });
+
+  iMesh.addLOD(impostor.geometry, impostor.material, 50);
+  // iMesh.addLOD(impostor.geometry, new MeshLambertMaterial({ wireframe: true }), 50);
+
+  iMesh.computeBVH();
+
+  scene.add(iMesh);
+
+  const ground = new Mesh(new PlaneGeometry(2000, 2000, 10, 10), new MeshLambertMaterial({ color: 'sandybrown' }));
+  ground.rotateX(-Math.PI / 2);
+  scene.add(ground);
 });

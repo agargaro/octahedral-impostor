@@ -21,6 +21,7 @@ export interface OctahedralImpostorUniforms {
   // ormMap: IUniform<Texture>;
   parallaxScale: IUniform<number>;
   alphaClamp: IUniform<number>;
+  scale: IUniform<number>;
 }
 
 export interface CreateOctahedralImpostor<T extends Material> extends OctahedralImpostorMaterial, CreateTextureAtlasParams {
@@ -31,6 +32,7 @@ export interface OctahedralImpostorMaterial {
   transparent?: boolean;
   parallaxScale?: number;
   alphaClamp?: number;
+  scale?: number;
 }
 
 declare module 'three' {
@@ -65,7 +67,8 @@ export function createOctahedralImpostorMaterial<T extends Material>(parameters:
     spritesPerSide: { value: parameters.spritesPerSide ?? 16 }, // TODO config default value
     // ormMap: { value: null },
     parallaxScale: { value: parameters.parallaxScale ?? 0.1 },
-    alphaClamp: { value: parameters.alphaClamp ?? 0.5 }
+    alphaClamp: { value: parameters.alphaClamp ?? 0.5 },
+    scale: { value: parameters.scale }
   };
 
   overrideMaterialCompilation(material);
