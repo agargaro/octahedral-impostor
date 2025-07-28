@@ -1,6 +1,7 @@
 precision highp float;
 precision highp int;
 
+uniform mat3 normalMatrix;
 uniform sampler2D u_albedo_tex;
 
 varying vec2 vUv;
@@ -13,9 +14,13 @@ layout(location = 1) out vec4 gNormalDepth;
 void main() {
     vec4 albedo = texture(u_albedo_tex, vUv);
 
-    // Switch normal direction based on front-facing
-    float faceDirection = gl_FrontFacing ? 1.0 : -1.0;
-    vec3 normal = vNormal * faceDirection;
+    vec3 normal = normalize( vNormal );
+    #ifdef DOUBLE_SIDED
+        float faceDirection = gl_FrontFacing ? 1.0 : -1.0;
+        normal *= faceDirection;
+    #endif
+
+    normal = normalize(normalMatrix * normal);
 
     float fragCoordZ = 0.5 * vHighPrecisionZW[0] / vHighPrecisionZW[1] + 0.5;
 

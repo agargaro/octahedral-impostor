@@ -6,6 +6,10 @@ import shaderChunkParamsVertex from '../shaders/impostor/octahedral_impostor_sha
 import shaderChunkVertex from '../shaders/impostor/octahedral_impostor_shader_vertex.glsl';
 import { createTextureAtlas, CreateTextureAtlasParams } from '../utils/createTextureAtlas.js';
 
+// TODO: fix normal from top
+// TODO: use not standard normalMap uniform
+// TODO: use define to avoid paralax mapping if useless
+
 export type OctahedralImpostorDefinesKeys = 'EZ_USE_HEMI_OCTAHEDRON' | 'EZ_USE_NORMAL' | 'EZ_USE_ORM' | 'EZ_TRANSPARENT';
 export type OctahedralImpostorDefines = { [key in OctahedralImpostorDefinesKeys]?: boolean };
 
@@ -92,11 +96,12 @@ function overrideMaterialCompilation(material: Material): void {
   const customProgramCacheKeyBase = material.customProgramCacheKey;
 
   material.customProgramCacheKey = () => {
-    const hemiOcta = material.ezImpostorDefines.EZ_USE_HEMI_OCTAHEDRON;
-    const useNormal = material.ezImpostorDefines.EZ_USE_NORMAL;
-    const useOrm = material.ezImpostorDefines.EZ_USE_ORM;
+    const hemiOcta = !!material.ezImpostorDefines.EZ_USE_HEMI_OCTAHEDRON;
+    const useNormal = !!material.ezImpostorDefines.EZ_USE_NORMAL;
+    const useOrm = !!material.ezImpostorDefines.EZ_USE_ORM;
+    const transparent = !!material.transparent;
 
-    return `ez_${hemiOcta}_${material.transparent}_${useNormal}_${useOrm}_${customProgramCacheKeyBase.call(material)}`;
+    return `ez_${hemiOcta}_${transparent}_${useNormal}_${useOrm}_${customProgramCacheKeyBase.call(material)}`;
   };
 }
 

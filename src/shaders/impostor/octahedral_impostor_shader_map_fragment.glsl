@@ -10,7 +10,7 @@ vec4 blendedColor = blendImpostorSamples(uv1, uv2, uv3);
 if(blendedColor.a <= alphaClamp) discard;
 
 #ifndef EZ_TRANSPARENT
-blendedColor = vec4(vec3(blendedColor.rgb) / (blendedColor.a), 1.0);
+blendedColor = vec4(vec3(blendedColor.rgb) / blendedColor.a, 1.0);
 #endif
 
 diffuseColor *= blendedColor;

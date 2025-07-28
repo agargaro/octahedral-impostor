@@ -1,5 +1,5 @@
 import { Asset, Main, OrthographicCameraAuto } from '@three.ez/main';
-import { AmbientLight, DirectionalLight, MeshLambertMaterial, Scene } from 'three';
+import { DirectionalLight, MeshLambertMaterial, MeshNormalMaterial, Scene } from 'three';
 import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { OctahedralImpostor } from '../src/core/octahedralImpostor.js';
@@ -11,11 +11,10 @@ const controls = new OrbitControls(mainCamera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
 controls.update();
 
-Asset.load<GLTF>(GLTFLoader, 'cliff.gltf').then((gltf) => {
+Asset.load<GLTF>(GLTFLoader, 'palm.gltf').then((gltf) => {
   const mesh = gltf.scene;
 
-  const directionalLight = new DirectionalLight('white', 4.0);
-  // const ambientLight = new AmbientLight('white', 2.0);
+  const directionalLight = new DirectionalLight('white', 3);
 
   const lightPosition = {
     azimuth: 0,
@@ -41,7 +40,7 @@ Asset.load<GLTF>(GLTFLoader, 'cliff.gltf').then((gltf) => {
     useHemiOctahedron: true,
     transparent: true,
     spritesPerSide: 16,
-    textureSize: 2048,
+    textureSize: 8192,
     parallaxScale: 0,
     baseType: MeshLambertMaterial
   });
@@ -55,7 +54,7 @@ Asset.load<GLTF>(GLTFLoader, 'cliff.gltf').then((gltf) => {
   const gui = new GUI();
   gui.add(impostor.material.ezImpostorUniforms.parallaxScale, 'value', 0, 0.3, 0.01).name('Parallax Scale');
   gui.add(impostor.material.ezImpostorUniforms.alphaClamp, 'value', 0, 0.5, 0.01).name('Alpha Clamp');
-  gui.add(impostor.material, 'transparent');
+  gui.add(impostor.material, 'transparent').onChange((value) => impostor.material.needsUpdate = true);
   gui.add(config, 'showImpostor').onChange((value) => {
     mesh.visible = !value;
     impostor.visible = value;
@@ -64,4 +63,6 @@ Asset.load<GLTF>(GLTFLoader, 'cliff.gltf').then((gltf) => {
   lightFolder.add(directionalLight, 'intensity', 0, 10, 0.01).name('Intensity');
   lightFolder.add(lightPosition, 'azimuth', -180, 180, 1).name('Azimuth').onChange(() => lightPosition.update());
   lightFolder.add(lightPosition, 'elevation', -90, 90, 1).name('Elevation').onChange(() => lightPosition.update());
+
+  // mesh.querySelectorAll('Mesh').forEach((m) => { m.material = new MeshNormalMaterial() }); // todo remove
 });

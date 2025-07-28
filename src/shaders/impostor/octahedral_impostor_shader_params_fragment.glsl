@@ -37,6 +37,14 @@ vec4 blendImpostorSamples(vec2 uv1, vec2 uv2, vec2 uv3) {
   return sprite1 * vSpritesWeight.x + sprite2 * vSpritesWeight.y + sprite3 * vSpritesWeight.z;
 }
 
+vec3 blendNormals(vec2 uv1, vec2 uv2, vec2 uv3) {
+  vec4 normalDepth1 = texture2D(normalMap, uv1); // lo stiamo leggendo due volte, migliorare perchè lo leggiamo per il depth anche
+  vec4 normalDepth2 = texture2D(normalMap, uv2);
+  vec4 normalDepth3 = texture2D(normalMap, uv3);
+
+  return normalize(normalDepth1.xyz * vSpritesWeight.x + normalDepth2.xyz * vSpritesWeight.y + normalDepth3.xyz * vSpritesWeight.z);
+}
+
 vec2 parallaxUV(vec2 uv_f, vec2 frame, vec2 xy_f, float frame_size, float weight) {
   // vec2 spriteUv = frame_size * (frame + uv_f);
   // float depth = texture(normalMap, spriteUv).a;
