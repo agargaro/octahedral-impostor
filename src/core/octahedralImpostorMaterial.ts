@@ -1,4 +1,4 @@
-import { IUniform, Material } from 'three';
+import { IUniform, Material, Vector3 } from 'three';
 import shaderChunkMapFragment from '../shaders/impostor/octahedral_impostor_shader_map_fragment.glsl';
 import shaderChunkNormalFragmentBegin from '../shaders/impostor/octahedral_impostor_shader_normal_fragment_begin.glsl';
 import shaderChunkParamsFragment from '../shaders/impostor/octahedral_impostor_shader_params_fragment.glsl';
@@ -22,6 +22,7 @@ export interface OctahedralImpostorUniforms {
   parallaxScale: IUniform<number>;
   alphaClamp: IUniform<number>;
   scale: IUniform<number>;
+  translation: IUniform<Vector3>;
 }
 
 export interface CreateOctahedralImpostor<T extends Material> extends OctahedralImpostorMaterial, CreateTextureAtlasParams {
@@ -33,6 +34,7 @@ export interface OctahedralImpostorMaterial {
   parallaxScale?: number;
   alphaClamp?: number;
   scale?: number;
+  translation?: Vector3;
 }
 
 declare module 'three' {
@@ -68,7 +70,8 @@ export function createOctahedralImpostorMaterial<T extends Material>(parameters:
     // ormMap: { value: null },
     parallaxScale: { value: parameters.parallaxScale ?? 0.1 },
     alphaClamp: { value: parameters.alphaClamp ?? 0.5 },
-    scale: { value: parameters.scale }
+    scale: { value: parameters.scale ?? 1 },
+    translation: { value: parameters.translation ?? new Vector3(0, 0, 0) }
   };
 
   overrideMaterialCompilation(material);

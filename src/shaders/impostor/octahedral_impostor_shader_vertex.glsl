@@ -2,7 +2,18 @@
 
 vec2 spritesMinusOne = vec2(spritesPerSide - 1.0);
 
-vec3 cameraPosLocal = (inverse(modelMatrix) * vec4(cameraPosition, 1.0)).xyz;
+// TODO optimize this
+mat4 transform = mat4(
+    scale, 0.0, 0.0, 0.0,
+    0.0, scale, 0.0, 0.0,
+    0.0, 0.0, scale, 0.0,
+    translation.x, translation.y, translation.z, 1.0
+);
+
+mat4 instanceMatrix2 = instanceMatrix * transform;
+
+// vec3 cameraPosLocal = (inverse(modelMatrix) * vec4(cameraPosition, 1.0)).xyz;
+vec3 cameraPosLocal = (inverse(instanceMatrix2 * modelMatrix) * vec4(cameraPosition, 1.0)).xyz;
 vec3 cameraDir = normalize(cameraPosLocal);
 
 vec3 projectedVertex = projectVertex(cameraDir);
@@ -42,6 +53,12 @@ vSpriteViewDir1 = projectDirectionToBasis(-viewDirLocal, spriteNormal1, planeX1,
 vSpriteViewDir2 = projectDirectionToBasis(-viewDirLocal, spriteNormal2, planeX2, planeY2).xy;
 vSpriteViewDir3 = projectDirectionToBasis(-viewDirLocal, spriteNormal3, planeX3, planeY3).xy;
 
-vec4 mvPosition = modelViewMatrix * vec4(projectedVertex, 1.0);
+vec4 mvPosition = vec4(projectedVertex, 1.0);
+
+#if defined USE_INSTANCING || defined USE_INSTANCING_INDIRECT
+    mvPosition = instanceMatrix2 * mvPosition;
+#endif
+
+mvPosition = modelViewMatrix * mvPosition;
 
 gl_Position = projectionMatrix * mvPosition;

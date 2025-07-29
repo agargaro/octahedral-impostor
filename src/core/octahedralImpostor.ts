@@ -2,11 +2,9 @@ import { Material, Mesh, PlaneGeometry, Sphere } from 'three';
 import { computeObjectBoundingSphere } from '../utils/computeObjectBoundingSphere.js';
 import { CreateOctahedralImpostor, createOctahedralImpostorMaterial } from './octahedralImpostorMaterial.js';
 
-const planeGeometry = new PlaneGeometry();
-
 export class OctahedralImpostor<M extends Material = Material> extends Mesh<PlaneGeometry, M> {
   constructor(materialOrParams: M | CreateOctahedralImpostor<M>) {
-    super(planeGeometry, null);
+    super(new PlaneGeometry(), null);
 
     if (!(materialOrParams as M).isOctahedralImpostorMaterial) {
       const mesh = (materialOrParams as CreateOctahedralImpostor<M>).target;
@@ -14,6 +12,10 @@ export class OctahedralImpostor<M extends Material = Material> extends Mesh<Plan
 
       this.scale.multiplyScalar(sphere.radius * 2);
       this.position.copy(sphere.center);
+
+      // only if InstancedMesh
+      materialOrParams.scale = sphere.radius * 2;
+      materialOrParams.translation = sphere.center.clone();
 
       materialOrParams = createOctahedralImpostorMaterial(materialOrParams as CreateOctahedralImpostor<M>);
     }

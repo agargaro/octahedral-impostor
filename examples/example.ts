@@ -1,5 +1,5 @@
-import { Asset, Main, OrthographicCameraAuto, PerspectiveCameraAuto } from '@three.ez/main';
-import { DirectionalLight, MeshBasicMaterial, MeshLambertMaterial, MeshNormalMaterial, Scene } from 'three';
+import { Asset, Main, PerspectiveCameraAuto } from '@three.ez/main';
+import { DirectionalLight, MeshLambertMaterial, Scene } from 'three';
 import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { OctahedralImpostor } from '../src/core/octahedralImpostor.js';
@@ -32,7 +32,7 @@ Asset.load<GLTF>(GLTFLoader, 'palm.gltf').then((gltf) => {
     }
   };
 
-  scene.add(mesh, directionalLight);
+  scene.add(mesh, directionalLight).translateX(10).translateZ(-20);
 
   const impostor = new OctahedralImpostor({
     renderer: main.renderer,
