@@ -6,15 +6,21 @@ import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { OctahedralImpostor } from '../src/core/octahedralImpostor.js';
 
-const camera = new PerspectiveCameraAuto(50, 0.1, 1000).translateZ(20).translateY(5);
+const camera = new PerspectiveCameraAuto(50, 0.1, 800).translateZ(20).translateY(5);
 const scene = new Scene();
 const main = new Main(); // init renderer and other stuff
 const controls = new MapControls(camera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
 controls.update();
 
+main.renderer.setPixelRatio(1); // TODO mmm...
+
 Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const mesh = gltf.scene;
+
+  mesh.children[0].material.transparent = false;
+  mesh.children[0].material.alphaTest = 0.4;
+  mesh.children[0].material.depthWrite = true;
 
   const directionalLight = new DirectionalLight('white', 3);
   const ambientLight = new AmbientLight('white', 1);
@@ -37,7 +43,7 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
 
   scene.add(directionalLight, ambientLight);
 
-  scene.fog = new FogExp2('cyan', 0.002);
+  scene.fog = new FogExp2('cyan', 0.003);
 
   main.createView({ scene, camera: camera, backgroundColor: 'cyan', enabled: false });
 
@@ -45,7 +51,7 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
 
   const iMesh = new InstancedMesh2(mergedGeo, mesh.children.map((x) => (x as Mesh).material as Material), { createEntities: true, renderer: main.renderer });
 
-  iMesh.addInstances(500000, (obj) => {
+  iMesh.addInstances(300000, (obj) => {
     obj.position.x = Math.random() * 4000 - 2000;
     obj.position.z = Math.random() * 4000 - 2000;
     obj.rotateY(Math.random() * Math.PI * 2);
@@ -62,7 +68,7 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
     target: mesh,
     useHemiOctahedron: true,
     transparent: false,
-    alphaClamp: 0.35, // TODO call it alphaTest
+    alphaClamp: 0.2, // TODO call it alphaTest
     spritesPerSide: 16,
     textureSize: 1024,
     baseType: MeshLambertMaterial
@@ -101,6 +107,4 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
   lightFolder.add(directionalLight, 'intensity', 0, 10, 0.01).name('Intensity');
   lightFolder.add(lightPosition, 'azimuth', -180, 180, 1).name('Azimuth').onChange(() => lightPosition.update());
   lightFolder.add(lightPosition, 'elevation', -90, 90, 1).name('Elevation').onChange(() => lightPosition.update());
-
-  main.renderer.setPixelRatio(1); // TODO mmm...
 });

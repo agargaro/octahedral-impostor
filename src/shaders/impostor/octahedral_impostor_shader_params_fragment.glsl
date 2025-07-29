@@ -52,12 +52,19 @@ vec2 parallaxUV(vec2 uv_f, vec2 frame, vec2 xy_f, float frame_size, float weight
   // uv_f = clamp(uv_f + parallaxOffset, vec2(0.0), vec2(1.0));
   // return frame_size * (frame + uv_f);
 
+//  // this is working
+//   uv_f = clamp(uv_f, vec2(0), vec2(1));
+// 	vec2 uv_quad = frame_size * (frame + uv_f);
+//   float n_depth = max(0.0, 0.5 - texture(normalMap, uv_quad).a);
+
+//   uv_f = xy_f * n_depth * parallaxScale * (1.0 - weight) + uv_f;
+// 	uv_f = clamp(uv_f, vec2(0), vec2(1));
+// 	uv_f =  frame_size * (frame + uv_f);
+// 	return clamp(uv_f, vec2(0), vec2(1));
+
+  //parallax temporaly removed
   uv_f = clamp(uv_f, vec2(0), vec2(1));
 	vec2 uv_quad = frame_size * (frame + uv_f);
-  float n_depth = max(0.0, 0.5 - texture(normalMap, uv_quad).a);
-
-  uv_f = xy_f * n_depth * parallaxScale * (1.0 - weight) + uv_f;
-	uv_f = clamp(uv_f, vec2(0), vec2(1));
 	uv_f =  frame_size * (frame + uv_f);
 	return clamp(uv_f, vec2(0), vec2(1));
 }

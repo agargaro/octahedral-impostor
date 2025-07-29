@@ -1,7 +1,8 @@
 precision highp float;
 precision highp int;
 
-#include <alphatest_pars_fragment>
+// #include <alphatest_pars_fragment>
+uniform float alphaTest;
 uniform mat3 normalMatrix;
 uniform sampler2D map;
 
@@ -14,7 +15,7 @@ layout(location = 1) out vec4 gNormalDepth;
 
 void main() {
     vec4 albedo = texture(map, vUv);
-    if (albedo.a < alphaTest) discard;
+    if (albedo.a < 0.4) discard; // TODO
 
     vec3 normal = normalize( vNormal );
     #ifdef DOUBLE_SIDED

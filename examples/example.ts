@@ -1,5 +1,5 @@
 import { Asset, Main, PerspectiveCameraAuto } from '@three.ez/main';
-import { DirectionalLight, MeshLambertMaterial, Scene } from 'three';
+import { AmbientLight, DirectionalLight, MeshLambertMaterial, Scene } from 'three';
 import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { OctahedralImpostor } from '../src/core/octahedralImpostor.js';
@@ -11,10 +11,11 @@ const controls = new OrbitControls(mainCamera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
 controls.update();
 
-Asset.load<GLTF>(GLTFLoader, 'tree2.glb').then((gltf) => {
+Asset.load<GLTF>(GLTFLoader, 'tree.glb').then((gltf) => {
   const mesh = gltf.scene;
 
   const directionalLight = new DirectionalLight('white', 3);
+  const ambientLight = new AmbientLight('white', 1);
 
   const lightPosition = {
     azimuth: 0,
@@ -32,15 +33,19 @@ Asset.load<GLTF>(GLTFLoader, 'tree2.glb').then((gltf) => {
     }
   };
 
-  scene.add(mesh, directionalLight);
+  scene.add(mesh, directionalLight, ambientLight);
+
+  mesh.children[0].material.transparent = false;
+  mesh.children[0].material.alphaTest = 0.2;
+  mesh.children[0].material.depthWrite = true;
 
   const impostor = new OctahedralImpostor({
     renderer: main.renderer,
     target: mesh,
     useHemiOctahedron: true,
-    transparent: true,
+    transparent: false,
     spritesPerSide: 16,
-    textureSize: 2048,
+    textureSize: 8192,
     parallaxScale: 0,
     baseType: MeshLambertMaterial
   });
