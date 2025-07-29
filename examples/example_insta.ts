@@ -38,13 +38,7 @@ Asset.load<GLTF>(GLTFLoader, 'palm.gltf').then(async (gltf) => {
 
   scene.fog = new FogExp2('cyan', 0.002);
 
-  main.createView({ scene, camera: mainCamera, backgroundColor: 'cyan' });
-
-  const gui = new GUI();
-  const lightFolder = gui.addFolder('Directional Light');
-  lightFolder.add(directionalLight, 'intensity', 0, 10, 0.01).name('Intensity');
-  lightFolder.add(lightPosition, 'azimuth', -180, 180, 1).name('Azimuth').onChange(() => lightPosition.update());
-  lightFolder.add(lightPosition, 'elevation', -90, 90, 1).name('Elevation').onChange(() => lightPosition.update());
+  main.createView({ scene, camera: mainCamera, backgroundColor: 'cyan', enabled: false });
 
   const mergedGeo = mergeGeometries(mesh.children.map((x) => (x as Mesh).geometry), true);
 
@@ -73,6 +67,8 @@ Asset.load<GLTF>(GLTFLoader, 'palm.gltf').then(async (gltf) => {
   // iMesh.addLOD(mergedGeoLOD, mesh.children.map((x) => ((x as Mesh).material as Material).clone()), 20);
   iMesh.addLOD(impostor.geometry, impostor.material, 50);
 
+  const LODLevel = iMesh.LODinfo.render.levels[1];
+
   iMesh.computeBVH();
 
   scene.add(iMesh);
@@ -80,4 +76,11 @@ Asset.load<GLTF>(GLTFLoader, 'palm.gltf').then(async (gltf) => {
   const ground = new Mesh(new PlaneGeometry(2000, 2000, 10, 10), new MeshLambertMaterial({ color: 'sandybrown' }));
   ground.rotateX(-Math.PI / 2);
   scene.add(ground);
+
+  const gui = new GUI();
+  gui.add(LODLevel, 'distance', 0, 1000 ** 2, 1).name('Impostor distance (pow 2)');
+  const lightFolder = gui.addFolder('Directional Light');
+  lightFolder.add(directionalLight, 'intensity', 0, 10, 0.01).name('Intensity');
+  lightFolder.add(lightPosition, 'azimuth', -180, 180, 1).name('Azimuth').onChange(() => lightPosition.update());
+  lightFolder.add(lightPosition, 'elevation', -90, 90, 1).name('Elevation').onChange(() => lightPosition.update());
 });
