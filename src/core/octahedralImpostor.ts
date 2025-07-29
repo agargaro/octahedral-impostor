@@ -1,35 +1,32 @@
-import { Mesh, PlaneGeometry, RenderTarget, Sphere } from 'three';
+import { Material, Mesh, PlaneGeometry, Sphere } from 'three';
 import { computeObjectBoundingSphere } from '../utils/computeObjectBoundingSphere.js';
-import { generateOctahedralImpostorMaterial, OctahedralImpostorParams } from '../utils/generateMaterial.js';
-import { OctahedralImpostorMaterial } from './octahedralImpostorMaterial.js';
+import { CreateOctahedralImpostor, createOctahedralImpostorMaterial } from './octahedralImpostorMaterial.js';
 
-const planeGeometry = new PlaneGeometry();
+export class OctahedralImpostor<M extends Material = Material> extends Mesh<PlaneGeometry, M> {
+  constructor(materialOrParams: M | CreateOctahedralImpostor<M>) {
+    super(new PlaneGeometry(), null);
 
-export class OctahedralImpostor extends Mesh<PlaneGeometry, OctahedralImpostorMaterial> {
-  public albedoRenderTarget: RenderTarget = null; // TODO set
-  public depthNormalMapRenderTarget: RenderTarget = null;
-  public ormMapRenderTarget: RenderTarget = null;
-
-  constructor(materialOrParams: OctahedralImpostorMaterial | OctahedralImpostorParams) {
-    super(planeGeometry, null);
-
-    if (!(materialOrParams as OctahedralImpostorMaterial).isOctahedralImpostorMaterial) {
-      const mesh = (materialOrParams as OctahedralImpostorParams).target.children[0]; // TODO make it more general
+    if (!(materialOrParams as M).isOctahedralImpostorMaterial) {
+      const mesh = (materialOrParams as CreateOctahedralImpostor<M>).target;
       const sphere = computeObjectBoundingSphere(mesh, new Sphere(), true); // TODO compute it once
+
       this.scale.multiplyScalar(sphere.radius * 2);
       this.position.copy(sphere.center);
 
-      materialOrParams = generateOctahedralImpostorMaterial(materialOrParams as OctahedralImpostorParams);
+      // only if InstancedMesh
+      materialOrParams.scale = sphere.radius * 2;
+      materialOrParams.translation = sphere.center.clone();
+
+      materialOrParams = createOctahedralImpostorMaterial(materialOrParams as CreateOctahedralImpostor<M>);
     }
 
-    this.material = materialOrParams as OctahedralImpostorMaterial;
+    this.material = materialOrParams as M;
   }
 
-  // @ts-expect-error Property 'clone' is not assignable to the same property in base type 'Mesh'.
-  public override clone(): OctahedralImpostor {
-    const impostor = new OctahedralImpostor(this.material.clone()); // TODO clone?
+  public override clone(): this {
+    const impostor = new OctahedralImpostor(this.material);
     impostor.scale.copy(this.scale);
     impostor.position.copy(this.position);
-    return impostor;
+    return impostor as this;
   }
 }
