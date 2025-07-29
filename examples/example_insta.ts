@@ -1,4 +1,4 @@
-import { InstancedMesh2 } from '@three.ez/instanced-mesh';
+import { createRadixSort, InstancedMesh2 } from '@three.ez/instanced-mesh';
 import { Asset, Main, PerspectiveCameraAuto } from '@three.ez/main';
 import { AmbientLight, DirectionalLight, FogExp2, Material, Mesh, MeshLambertMaterial, PlaneGeometry, Scene } from 'three';
 import { GLTF, GLTFLoader, MapControls } from 'three/examples/jsm/Addons.js';
@@ -7,13 +7,13 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { OctahedralImpostor } from '../src/core/octahedralImpostor.js';
 
 const camera = new PerspectiveCameraAuto(50, 0.1, 800).translateZ(20).translateY(5);
-const scene = new Scene();
+const scene = new Scene().activeSmartRendering();
 const main = new Main(); // init renderer and other stuff
 const controls = new MapControls(camera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
 controls.update();
 
-main.renderer.setPixelRatio(1); // TODO mmm...
+main.renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio)); // TODO mmm...
 
 Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const mesh = gltf.scene;
@@ -51,6 +51,9 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
 
   const iMesh = new InstancedMesh2(mergedGeo, mesh.children.map((x) => (x as Mesh).material as Material), { createEntities: true, renderer: main.renderer });
 
+  iMesh.sortObjects = true;
+  iMesh.customSort = createRadixSort(iMesh);
+
   iMesh.addInstances(300000, (obj) => {
     obj.position.x = Math.random() * 4000 - 2000;
     obj.position.z = Math.random() * 4000 - 2000;
@@ -58,10 +61,6 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
     obj.scale.setScalar(Math.random() * 0.5 + 0.75);
     // add color
   });
-
-  iMesh.position.copy(mesh.children[0].position);
-  iMesh.scale.copy(mesh.children[0].scale);
-  iMesh.rotation.copy(mesh.children[0].rotation);
 
   const impostor = new OctahedralImpostor({
     renderer: main.renderer,
@@ -85,24 +84,15 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
 
   scene.add(iMesh);
 
-  iMesh.autoUpdate = false;
-  let cullingNeedsUpdate = true;
-  controls.addEventListener('change', () => cullingNeedsUpdate = true);
-  iMesh.on('viewportresize', () => cullingNeedsUpdate = true);
-
-  iMesh.on('animate', () => {
-    if (!cullingNeedsUpdate) return;
-    camera.updateMatrixWorld();
-    iMesh.performFrustumCulling(camera);
-    cullingNeedsUpdate = false;
-  });
+  controls.addEventListener('change', () => scene.needsRender = true);
+  iMesh.on('viewportresize', () => scene.needsRender = true);
 
   const ground = new Mesh(new PlaneGeometry(2000, 2000, 10, 10), new MeshLambertMaterial({ color: 'sandybrown' }));
   ground.rotateX(-Math.PI / 2);
   scene.add(ground);
 
   const gui = new GUI();
-  gui.add(LODLevel, 'distance', 0, 1000 ** 2, 1).name('Impostor distance (pow 2)').onChange(() => cullingNeedsUpdate = true);
+  gui.add(LODLevel, 'distance', 0, 1000 ** 2, 1).name('Impostor distance (pow 2)').onChange(() => scene.needsRender = true);
   const lightFolder = gui.addFolder('Directional Light');
   lightFolder.add(directionalLight, 'intensity', 0, 10, 0.01).name('Intensity');
   lightFolder.add(lightPosition, 'azimuth', -180, 180, 1).name('Azimuth').onChange(() => lightPosition.update());
