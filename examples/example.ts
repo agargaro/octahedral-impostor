@@ -11,7 +11,7 @@ const controls = new OrbitControls(mainCamera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
 controls.update();
 
-Asset.load<GLTF>(GLTFLoader, 'palm.gltf').then((gltf) => {
+Asset.load<GLTF>(GLTFLoader, 'tree2.glb').then((gltf) => {
   const mesh = gltf.scene;
 
   const directionalLight = new DirectionalLight('white', 3);
@@ -32,7 +32,7 @@ Asset.load<GLTF>(GLTFLoader, 'palm.gltf').then((gltf) => {
     }
   };
 
-  scene.add(mesh, directionalLight).translateX(10).translateZ(-20);
+  scene.add(mesh, directionalLight);
 
   const impostor = new OctahedralImpostor({
     renderer: main.renderer,

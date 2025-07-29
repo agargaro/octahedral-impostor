@@ -1,8 +1,7 @@
 #include <clipping_planes_pars_vertex>
 
-uniform float scale; // uv scale
+uniform mat4 transform; // TODO optimize
 uniform float spritesPerSide;
-uniform vec3 translation;
 
 flat varying vec4 vSpritesWeight;
 flat varying vec2 vSprite1;

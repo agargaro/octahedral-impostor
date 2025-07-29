@@ -1,22 +1,23 @@
 import { InstancedMesh2 } from '@three.ez/instanced-mesh';
 import { Asset, Main, PerspectiveCameraAuto } from '@three.ez/main';
-import { DirectionalLight, FogExp2, Material, Mesh, MeshLambertMaterial, PlaneGeometry, Scene } from 'three';
+import { AmbientLight, DirectionalLight, FogExp2, Material, Mesh, MeshLambertMaterial, PlaneGeometry, Scene } from 'three';
 import { GLTF, GLTFLoader, MapControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { OctahedralImpostor } from '../src/core/octahedralImpostor.js';
 
-const mainCamera = new PerspectiveCameraAuto(50, 0.1, 1000).translateZ(20).translateY(5);
+const camera = new PerspectiveCameraAuto(50, 0.1, 1000).translateZ(20).translateY(5);
 const scene = new Scene();
 const main = new Main(); // init renderer and other stuff
-const controls = new MapControls(mainCamera, main.renderer.domElement);
+const controls = new MapControls(camera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
 controls.update();
 
-Asset.load<GLTF>(GLTFLoader, 'palm.gltf').then(async (gltf) => {
+Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const mesh = gltf.scene;
 
   const directionalLight = new DirectionalLight('white', 3);
+  const ambientLight = new AmbientLight('white', 1);
 
   const lightPosition = {
     azimuth: 0,
@@ -34,53 +35,72 @@ Asset.load<GLTF>(GLTFLoader, 'palm.gltf').then(async (gltf) => {
     }
   };
 
-  scene.add(directionalLight);
+  scene.add(directionalLight, ambientLight);
 
   scene.fog = new FogExp2('cyan', 0.002);
 
-  main.createView({ scene, camera: mainCamera, backgroundColor: 'cyan', enabled: false });
+  main.createView({ scene, camera: camera, backgroundColor: 'cyan', enabled: false });
 
   const mergedGeo = mergeGeometries(mesh.children.map((x) => (x as Mesh).geometry), true);
 
-  const iMesh = new InstancedMesh2(mergedGeo, mesh.children.map((x) => (x as Mesh).material as Material), { createEntities: true });
+  const iMesh = new InstancedMesh2(mergedGeo, mesh.children.map((x) => (x as Mesh).material as Material), { createEntities: true, renderer: main.renderer });
 
   iMesh.addInstances(500000, (obj) => {
     obj.position.x = Math.random() * 4000 - 2000;
     obj.position.z = Math.random() * 4000 - 2000;
     obj.rotateY(Math.random() * Math.PI * 2);
+    obj.scale.setScalar(Math.random() * 0.5 + 0.75);
+    // add color
   });
+
+  iMesh.position.copy(mesh.children[0].position);
+  iMesh.scale.copy(mesh.children[0].scale);
+  iMesh.rotation.copy(mesh.children[0].rotation);
 
   const impostor = new OctahedralImpostor({
     renderer: main.renderer,
     target: mesh,
     useHemiOctahedron: true,
     transparent: false,
+    alphaClamp: 0.35, // TODO call it alphaTest
     spritesPerSide: 16,
-    textureSize: 2048,
-    parallaxScale: 0,
+    textureSize: 1024,
     baseType: MeshLambertMaterial
   });
 
-  // const LODGeo = await simplifyGeometries(mesh.children.map((x) => (x as Mesh).geometry), { ratio: 0.3 });
+  // const LODGeo = await simplifyGeometries(mesh.children.map((x) => (x as Mesh).geometry), { ratio: 0.5 });
   // const mergedGeoLOD = mergeGeometries(LODGeo, true);
+  // iMesh.addLOD(mergedGeoLOD, mesh.children.map((x) => ((x as Mesh).material as Material).clone()), 15);
 
-  // iMesh.addLOD(mergedGeoLOD, mesh.children.map((x) => ((x as Mesh).material as Material).clone()), 20);
-  iMesh.addLOD(impostor.geometry, impostor.material, 50);
+  iMesh.addLOD(impostor.geometry, impostor.material, 100);
+  iMesh.computeBVH();
 
   const LODLevel = iMesh.LODinfo.render.levels[1];
 
-  iMesh.computeBVH();
-
   scene.add(iMesh);
+
+  iMesh.autoUpdate = false;
+  let cullingNeedsUpdate = true;
+  controls.addEventListener('change', () => cullingNeedsUpdate = true);
+  iMesh.on('viewportresize', () => cullingNeedsUpdate = true);
+
+  iMesh.on('animate', () => {
+    if (!cullingNeedsUpdate) return;
+    camera.updateMatrixWorld();
+    iMesh.performFrustumCulling(camera);
+    cullingNeedsUpdate = false;
+  });
 
   const ground = new Mesh(new PlaneGeometry(2000, 2000, 10, 10), new MeshLambertMaterial({ color: 'sandybrown' }));
   ground.rotateX(-Math.PI / 2);
   scene.add(ground);
 
   const gui = new GUI();
-  gui.add(LODLevel, 'distance', 0, 1000 ** 2, 1).name('Impostor distance (pow 2)');
+  gui.add(LODLevel, 'distance', 0, 1000 ** 2, 1).name('Impostor distance (pow 2)').onChange(() => cullingNeedsUpdate = true);
   const lightFolder = gui.addFolder('Directional Light');
   lightFolder.add(directionalLight, 'intensity', 0, 10, 0.01).name('Intensity');
   lightFolder.add(lightPosition, 'azimuth', -180, 180, 1).name('Azimuth').onChange(() => lightPosition.update());
   lightFolder.add(lightPosition, 'elevation', -90, 90, 1).name('Elevation').onChange(() => lightPosition.update());
+
+  main.renderer.setPixelRatio(1); // TODO mmm...
 });

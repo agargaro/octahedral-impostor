@@ -1,4 +1,4 @@
-import { IUniform, Material, Vector3 } from 'three';
+import { IUniform, Material, Matrix4, Vector3 } from 'three';
 import shaderChunkMapFragment from '../shaders/impostor/octahedral_impostor_shader_map_fragment.glsl';
 import shaderChunkNormalFragmentBegin from '../shaders/impostor/octahedral_impostor_shader_normal_fragment_begin.glsl';
 import shaderChunkParamsFragment from '../shaders/impostor/octahedral_impostor_shader_params_fragment.glsl';
@@ -21,8 +21,7 @@ export interface OctahedralImpostorUniforms {
   // ormMap: IUniform<Texture>;
   parallaxScale: IUniform<number>;
   alphaClamp: IUniform<number>;
-  scale: IUniform<number>;
-  translation: IUniform<Vector3>;
+  transform: IUniform<Matrix4>;
 }
 
 export interface CreateOctahedralImpostor<T extends Material> extends OctahedralImpostorMaterial, CreateTextureAtlasParams {
@@ -65,13 +64,14 @@ export function createOctahedralImpostorMaterial<T extends Material>(parameters:
   material.ezImpostorDefines.EZ_USE_NORMAL = true; // TODO only if lights
   // material.ezImpostorDefines.EZ_USE_ORM = true; // TODO only if lights
 
+  const { scale, translation, spritesPerSide, parallaxScale, alphaClamp } = parameters;
+
   material.ezImpostorUniforms = {
-    spritesPerSide: { value: parameters.spritesPerSide ?? 16 }, // TODO config default value
+    spritesPerSide: { value: spritesPerSide ?? 16 }, // TODO config default value
     // ormMap: { value: null },
-    parallaxScale: { value: parameters.parallaxScale ?? 0.1 },
-    alphaClamp: { value: parameters.alphaClamp ?? 0.5 },
-    scale: { value: parameters.scale ?? 1 },
-    translation: { value: parameters.translation ?? new Vector3(0, 0, 0) }
+    parallaxScale: { value: parallaxScale ?? 0 },
+    alphaClamp: { value: alphaClamp ?? 0.4 },
+    transform: { value: new Matrix4().makeScale(scale, scale, scale).setPosition(translation) }
   };
 
   overrideMaterialCompilation(material);
