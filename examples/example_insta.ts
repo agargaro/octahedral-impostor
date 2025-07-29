@@ -1,16 +1,15 @@
-import { createRadixSort, InstancedMesh2 } from '@three.ez/instanced-mesh';
+import { InstancedMesh2 } from '@three.ez/instanced-mesh';
 import { Asset, Main, PerspectiveCameraAuto } from '@three.ez/main';
-import { BoxGeometry, DirectionalLight, Fog, FogExp2, Material, Mesh, MeshLambertMaterial, PlaneGeometry, Scene } from 'three';
-import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
+import { DirectionalLight, FogExp2, Material, Mesh, MeshLambertMaterial, PlaneGeometry, Scene } from 'three';
+import { GLTF, GLTFLoader, MapControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { OctahedralImpostor } from '../src/core/octahedralImpostor.js';
-import { simplifyGeometries, simplifyGeometry } from '@three.ez/simplify-geometry';
 
-const mainCamera = new PerspectiveCameraAuto(50, 0.1, 2000).translateZ(20).translateY(5);
+const mainCamera = new PerspectiveCameraAuto(50, 0.1, 1000).translateZ(20).translateY(5);
 const scene = new Scene();
 const main = new Main(); // init renderer and other stuff
-const controls = new OrbitControls(mainCamera, main.renderer.domElement);
+const controls = new MapControls(mainCamera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
 controls.update();
 
@@ -37,7 +36,7 @@ Asset.load<GLTF>(GLTFLoader, 'palm.gltf').then(async (gltf) => {
 
   scene.add(directionalLight);
 
-  scene.fog = new FogExp2('white', 0.002);
+  scene.fog = new FogExp2('cyan', 0.002);
 
   main.createView({ scene, camera: mainCamera, backgroundColor: 'cyan' });
 
@@ -52,8 +51,8 @@ Asset.load<GLTF>(GLTFLoader, 'palm.gltf').then(async (gltf) => {
   const iMesh = new InstancedMesh2(mergedGeo, mesh.children.map((x) => (x as Mesh).material as Material), { createEntities: true });
 
   iMesh.addInstances(500000, (obj) => {
-    obj.position.x = Math.random() * 2000 - 1000;
-    obj.position.z = Math.random() * 2000 - 1000;
+    obj.position.x = Math.random() * 4000 - 2000;
+    obj.position.z = Math.random() * 4000 - 2000;
     obj.rotateY(Math.random() * Math.PI * 2);
   });
 
@@ -62,8 +61,8 @@ Asset.load<GLTF>(GLTFLoader, 'palm.gltf').then(async (gltf) => {
     target: mesh,
     useHemiOctahedron: true,
     transparent: false,
-    spritesPerSide: 12,
-    textureSize: 1024,
+    spritesPerSide: 16,
+    textureSize: 2048,
     parallaxScale: 0,
     baseType: MeshLambertMaterial
   });
