@@ -1,6 +1,6 @@
-import { createRadixSort, InstancedMesh2 } from '@three.ez/instanced-mesh';
+import { InstancedMesh2 } from '@three.ez/instanced-mesh';
 import { Asset, Main, PerspectiveCameraAuto } from '@three.ez/main';
-import { AmbientLight, DirectionalLight, FogExp2, Material, Mesh, MeshLambertMaterial, MeshStandardMaterial, RepeatWrapping, Scene, Texture, TextureLoader } from 'three';
+import { AmbientLight, Color, DirectionalLight, FogExp2, FrontSide, Material, Mesh, MeshLambertMaterial, MeshStandardMaterial, RepeatWrapping, Scene, Texture, TextureLoader } from 'three';
 import 'three-hex-tiling';
 import { GLTF, GLTFLoader, MapControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
@@ -8,8 +8,10 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { OctahedralImpostor } from '../../src/core/octahedralImpostor.js';
 import { Terrain, TerrainParams } from './terrain.js';
 
+// TODO: render terrain first to avoid impostor overdraw
+
 const camera = new PerspectiveCameraAuto(50, 0.1, 2000).translateZ(20).translateY(5);
-const scene = new Scene().activeSmartRendering();
+const scene = new Scene();
 const main = new Main(); // init renderer and other stuff
 const controls = new MapControls(camera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
@@ -19,10 +21,6 @@ main.renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio)); // TODO mmm
 
 Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const mesh = gltf.scene;
-
-  mesh.children[0].material.transparent = false;
-  mesh.children[0].material.alphaTest = 0.4;
-  mesh.children[0].material.depthWrite = true;
 
   const directionalLight = new DirectionalLight('white', 3);
   const ambientLight = new AmbientLight('white', 1);
@@ -45,20 +43,19 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
 
   scene.add(directionalLight, ambientLight);
 
+  scene.background = new Color('cyan');
   scene.fog = new FogExp2('cyan', 0.0005);
 
-  main.createView({ scene, camera: camera, backgroundColor: 'cyan', enabled: false });
+  main.createView({ scene, camera, enabled: false });
 
   // TERRAIN
 
   const grassNormalMap = await Asset.load<Texture>(TextureLoader, 'grass_normal.png');
-  grassNormalMap.wrapS = RepeatWrapping;
-  grassNormalMap.wrapT = RepeatWrapping;
+  grassNormalMap.wrapS = grassNormalMap.wrapT = RepeatWrapping;
   grassNormalMap.repeat.set(100, 100);
 
   const grassMap = await Asset.load<Texture>(TextureLoader, 'grass.jpg');
-  grassMap.wrapS = RepeatWrapping;
-  grassMap.wrapT = RepeatWrapping;
+  grassMap.wrapS = grassMap.wrapT = RepeatWrapping;
   grassMap.repeat.set(100, 100);
 
   const options: TerrainParams = {
@@ -109,7 +106,7 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
     target: mesh,
     useHemiOctahedron: true,
     transparent: false,
-    alphaClamp: 0.1, // TODO call it alphaTest
+    alphaClamp: 0.4, // TODO call it alphaTest
     spritesPerSide: 12,
     textureSize: 1024,
     baseType: MeshLambertMaterial
@@ -120,8 +117,12 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
 
   scene.add(iMesh);
 
-  controls.addEventListener('change', () => scene.needsRender = true);
-  iMesh.on('viewportresize', () => scene.needsRender = true);
+  // remove tree transparency
+
+  mesh.children[0].material.transparent = false;
+  mesh.children[0].material.depthWrite = true;
+  mesh.children[0].material.alphaTest = 0.4;
+  mesh.children[0].material.side = FrontSide;
 
   const gui = new GUI();
   // gui.add(LODLevel, 'distance', 0, 1000 ** 2, 1).name('Impostor distance (pow 2)').onChange(() => scene.needsRender = true);
