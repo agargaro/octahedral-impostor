@@ -120,24 +120,20 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
 
   function createMaterial(material: Material): ShaderMaterial {
     const uniforms: { [uniform: string]: IUniform } = {
-      map: { value: (material as MeshStandardMaterial).map }
+      map: { value: (material as MeshStandardMaterial).map },
+      alphaTest: { value: (material as MeshStandardMaterial).alphaTest }
       // normalMap: { value: (material as MeshStandardMaterial).normalMap }
-    };
-
-    const defines = {
-      USE_ALPHATEST: ''
     };
 
     // TODO: add normal map etc
 
     return new ShaderMaterial({
-      defines,
       uniforms,
       vertexShader,
       fragmentShader,
       glslVersion: GLSL3,
       side: material.side,
-      alphaTest: material.alphaTest,
+      // alphaTest: material.alphaTest,
       transparent: material.transparent
     });
   }

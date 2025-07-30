@@ -15,7 +15,7 @@ layout(location = 1) out vec4 gNormalDepth;
 
 void main() {
     vec4 albedo = texture(map, vUv);
-    if (albedo.a < 0.4) discard; // TODO
+    if (albedo.a < alphaTest) discard; // FIX
 
     vec3 normal = normalize( vNormal );
     #ifdef DOUBLE_SIDED

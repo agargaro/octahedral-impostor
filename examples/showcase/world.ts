@@ -1,16 +1,15 @@
-import { InstancedMesh2 } from '@three.ez/instanced-mesh';
+import { createRadixSort, InstancedMesh2 } from '@three.ez/instanced-mesh';
 import { Asset, Main, PerspectiveCameraAuto } from '@three.ez/main';
 import { AmbientLight, Color, DirectionalLight, FogExp2, FrontSide, Material, Mesh, MeshLambertMaterial, MeshStandardMaterial, RepeatWrapping, Scene, Texture, TextureLoader } from 'three';
 import 'three-hex-tiling';
 import { GLTF, GLTFLoader, MapControls } from 'three/examples/jsm/Addons.js';
-import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { OctahedralImpostor } from '../../src/core/octahedralImpostor.js';
 import { Terrain, TerrainParams } from './terrain.js';
 
 // TODO: render terrain first to avoid impostor overdraw
 
-const camera = new PerspectiveCameraAuto(50, 0.1, 2000).translateZ(20).translateY(5);
+const camera = new PerspectiveCameraAuto(50, 0.1, 5000).translateZ(20).translateY(5);
 const scene = new Scene();
 const main = new Main(); // init renderer and other stuff
 const controls = new MapControls(camera, main.renderer.domElement);
@@ -24,22 +23,6 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
 
   const directionalLight = new DirectionalLight('white', 3);
   const ambientLight = new AmbientLight('white', 1);
-
-  const lightPosition = {
-    azimuth: 0,
-    elevation: 45,
-    update: function () {
-      const azRad = this.azimuth * Math.PI / 180;
-      const elRad = this.elevation * Math.PI / 180;
-
-      const x = Math.cos(elRad) * Math.sin(azRad);
-      const y = Math.sin(elRad);
-      const z = Math.cos(elRad) * Math.cos(azRad);
-
-      directionalLight.position.set(x, y, z);
-      directionalLight.lookAt(0, 0, 0);
-    }
-  };
 
   scene.add(directionalLight, ambientLight);
 
@@ -70,7 +53,7 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
     gain: 0.2
   };
 
-  const terrain = new Terrain(new MeshStandardMaterial({ color: 0xbbbbbb, map: grassMap, normalMap: grassNormalMap, hexTiling: {} }), options);
+  const terrain = new Terrain(new MeshStandardMaterial({ color: 0xdddddd, map: grassMap, normalMap: grassNormalMap, hexTiling: {} }), options);
   terrain.receiveShadow = true;
 
   for (let x = -(options.maxChunksX / 2); x < (options.maxChunksX / 2); x++) {
@@ -82,23 +65,26 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
 
   // TREES AND IMPOSTORS
 
+  const oldMaterial = mesh.children[0].material as MeshStandardMaterial;
+  mesh.children[0].material = new MeshLambertMaterial({ alphaTest: 0.4, map: oldMaterial.map });
+
   const mergedGeo = mergeGeometries(mesh.children.map((x) => (x as Mesh).geometry), true);
   const materials = mesh.children.map((x) => (x as Mesh).material as Material);
 
-  const pos = await terrain.generateTrees(300000); // imporve it
+  const pos = await terrain.generateTrees(100000); // imporve it
 
   const iMesh = new InstancedMesh2(mergedGeo, materials, { createEntities: true, renderer: main.renderer, capacity: pos.length });
 
   // iMesh.sortObjects = true;
-  // iMesh.customSort = createRadixSort(iMesh);
+  iMesh.customSort = createRadixSort(iMesh);
 
   console.log('trees count', pos.length);
 
   iMesh.addInstances(pos.length, (obj, index) => {
     obj.position.copy(pos[index]);
-    obj.rotateY(Math.random() * Math.PI * 2).rotateX(Math.random() - 0.5);
+    obj.rotateY(Math.random() * Math.PI * 2).rotateX(Math.random() * 0.5 - 0.25);
     obj.scale.setScalar(Math.random() * 0.5 + 0.75);
-    // add color
+    // obj.color.setHSL(Math.random(), 0.5, 0.5);
   });
 
   const impostor = new OctahedralImpostor({
@@ -106,7 +92,7 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
     target: mesh,
     useHemiOctahedron: true,
     transparent: false,
-    alphaClamp: 0.4, // TODO call it alphaTest
+    alphaClamp: 0.2, // TODO call it alphaTest
     spritesPerSide: 12,
     textureSize: 1024,
     baseType: MeshLambertMaterial
@@ -116,18 +102,4 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
   iMesh.computeBVH();
 
   scene.add(iMesh);
-
-  // remove tree transparency
-
-  mesh.children[0].material.transparent = false;
-  mesh.children[0].material.depthWrite = true;
-  mesh.children[0].material.alphaTest = 0.4;
-  mesh.children[0].material.side = FrontSide;
-
-  const gui = new GUI();
-  // gui.add(LODLevel, 'distance', 0, 1000 ** 2, 1).name('Impostor distance (pow 2)').onChange(() => scene.needsRender = true);
-  const lightFolder = gui.addFolder('Directional Light');
-  lightFolder.add(directionalLight, 'intensity', 0, 10, 0.01).name('Intensity');
-  lightFolder.add(lightPosition, 'azimuth', -180, 180, 1).name('Azimuth').onChange(() => lightPosition.update());
-  lightFolder.add(lightPosition, 'elevation', -90, 90, 1).name('Elevation').onChange(() => lightPosition.update());
 });

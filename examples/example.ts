@@ -1,5 +1,5 @@
 import { Asset, Main, PerspectiveCameraAuto } from '@three.ez/main';
-import { AmbientLight, DirectionalLight, MeshLambertMaterial, Scene } from 'three';
+import { AmbientLight, DirectionalLight, MeshLambertMaterial, MeshNormalMaterial, MeshStandardMaterial, Scene } from 'three';
 import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { OctahedralImpostor } from '../src/core/octahedralImpostor.js';
@@ -35,9 +35,8 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then((gltf) => {
 
   scene.add(mesh, directionalLight, ambientLight);
 
-  mesh.children[0].material.transparent = false;
-  mesh.children[0].material.alphaTest = 0.2;
-  mesh.children[0].material.depthWrite = true;
+  const oldMaterial = mesh.children[0].material as MeshStandardMaterial;
+  mesh.children[0].material = new MeshLambertMaterial({ alphaTest: 0.2, map: oldMaterial.map });
 
   const impostor = new OctahedralImpostor({
     renderer: main.renderer,
@@ -71,6 +70,6 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then((gltf) => {
 
   // mesh.querySelectorAll('Mesh').forEach((m) => {
   //   const base = m.material as MeshBasicMaterial;
-  //   m.material = new MeshBasicMaterial({ alphaTest: base.alphaTest, transparent: base.transparent, map: base.map, side: base.side });
+  //   m.material = new MeshNormalMaterial();
   // }); // todo remove
 });
