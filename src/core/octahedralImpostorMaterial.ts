@@ -19,7 +19,7 @@ export type MaterialConstructor<T extends Material> = new () => T;
 export interface OctahedralImpostorUniforms {
   spritesPerSide: IUniform<number>;
   // ormMap: IUniform<Texture>;
-  parallaxScale: IUniform<number>;
+  // parallaxScale: IUniform<number>;
   alphaClamp: IUniform<number>;
   transform: IUniform<Matrix4>;
 }
@@ -30,7 +30,7 @@ export interface CreateOctahedralImpostor<T extends Material> extends Octahedral
 
 export interface OctahedralImpostorMaterial {
   transparent?: boolean;
-  parallaxScale?: number;
+  // parallaxScale?: number;
   alphaClamp?: number;
   scale?: number;
   translation?: Vector3;
@@ -64,12 +64,13 @@ export function createOctahedralImpostorMaterial<T extends Material>(parameters:
   material.ezImpostorDefines.EZ_USE_NORMAL = true; // TODO only if lights
   // material.ezImpostorDefines.EZ_USE_ORM = true; // TODO only if lights
 
-  const { scale, translation, spritesPerSide, parallaxScale, alphaClamp } = parameters;
+  const { scale, translation, spritesPerSide, alphaClamp } = parameters;
+  // const { scale, translation, spritesPerSide, parallaxScale, alphaClamp } = parameters;
 
   material.ezImpostorUniforms = {
     spritesPerSide: { value: spritesPerSide ?? 16 }, // TODO config default value
     // ormMap: { value: null },
-    parallaxScale: { value: parallaxScale ?? 0 },
+    // parallaxScale: { value: parallaxScale ?? 0 },
     alphaClamp: { value: alphaClamp ?? 0.4 },
     transform: { value: new Matrix4().makeScale(scale, scale, scale).setPosition(translation) }
   };
@@ -90,11 +91,13 @@ function overrideMaterialCompilation(material: Material): void {
       .replace('#include <clipping_planes_pars_vertex>', shaderChunkParamsVertex)
       .replace('#include <project_vertex>', shaderChunkVertex);
 
+    // TODO improve
     shader.fragmentShader = shader.fragmentShader
+      .replace('vec4 diffuseColor = vec4( diffuse, opacity );', `${shaderChunkMapFragment}\n vec4 diffuseColor = vec4( diffuse, opacity );`)
       .replace('#include <clipping_planes_pars_fragment>', shaderChunkParamsFragment)
       .replace('#include <normal_fragment_begin>', shaderChunkNormalFragmentBegin)
       .replace('#include <normal_fragment_maps>', '// #include <normal_fragment_maps>')
-      .replace('#include <map_fragment>', shaderChunkMapFragment);
+      .replace('#include <map_fragment>', 'diffuseColor *= blendedColor;'); // todo separate file
 
     onBeforeCompileBase?.call(material, shader, renderer);
   };

@@ -144,9 +144,9 @@ export class Terrain<M extends Material> extends BatchedMesh {
         amplitude *= this.gain;
         frequency *= this.lacunarity;
       }
-      if (noiseVal > -0.5 * this.amplitude && noiseVal < 0.5 * this.amplitude) {
-        positions.push(new Vector3(x * chunkSize, noiseVal, z * chunkSize));
-      }
+      // if (noiseVal > -0.5 * this.amplitude && noiseVal < 0.5 * this.amplitude) {
+      positions.push(new Vector3(x * chunkSize, noiseVal, z * chunkSize));
+      // }
     }
 
     return positions;

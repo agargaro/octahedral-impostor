@@ -1,5 +1,5 @@
 import { Asset, Main, PerspectiveCameraAuto } from '@three.ez/main';
-import { AmbientLight, DirectionalLight, MeshLambertMaterial, MeshNormalMaterial, MeshStandardMaterial, Scene } from 'three';
+import { AmbientLight, DirectionalLight, MeshBasicMaterial, Scene } from 'three';
 import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { OctahedralImpostor } from '../src/core/octahedralImpostor.js';
@@ -35,18 +35,24 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then((gltf) => {
 
   scene.add(mesh, directionalLight, ambientLight);
 
-  const oldMaterial = mesh.children[0].material as MeshStandardMaterial;
-  mesh.children[0].material = new MeshLambertMaterial({ alphaTest: 0.2, map: oldMaterial.map });
+  // const oldMaterial = mesh.children[0].material as MeshStandardMaterial;
+  // mesh.children[0].material = new MeshLambertMaterial({ alphaTest: 0.2, map: oldMaterial.map });
+
+  mesh.querySelectorAll('Mesh').forEach((m) => {
+    const base = m.material as MeshBasicMaterial;
+    m.material = new MeshBasicMaterial({ map: base.map, alphaTest: 0.5 });
+    m.material.map.generateMipmaps = false;
+  }); // todo remove
 
   const impostor = new OctahedralImpostor({
     renderer: main.renderer,
     target: mesh,
     useHemiOctahedron: true,
     transparent: false,
-    spritesPerSide: 16,
+    spritesPerSide: 8,
     textureSize: 8192,
     parallaxScale: 0,
-    baseType: MeshLambertMaterial
+    baseType: MeshBasicMaterial
   });
   scene.add(impostor);
 
@@ -70,6 +76,6 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then((gltf) => {
 
   // mesh.querySelectorAll('Mesh').forEach((m) => {
   //   const base = m.material as MeshBasicMaterial;
-  //   m.material = new MeshNormalMaterial();
+  //   m.material = new MeshNormalMaterial({ normalMap: base.map, normalScale: base.normalScale, normalMapType: base.normalMapType });
   // }); // todo remove
 });

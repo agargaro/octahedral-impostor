@@ -10,15 +10,15 @@ flat varying vec2 vSprite3;
 varying vec2 vSpriteUV1;
 varying vec2 vSpriteUV2;
 varying vec2 vSpriteUV3;
-varying vec2 vSpriteViewDir1;
-varying vec2 vSpriteViewDir2;
-varying vec2 vSpriteViewDir3;
+// varying vec2 vSpriteViewDir1;
+// varying vec2 vSpriteViewDir2;
+// varying vec2 vSpriteViewDir3;
 
-#ifdef EZ_USE_NORMAL
-flat varying vec3 vSpriteNormal1;
-flat varying vec3 vSpriteNormal2;
-flat varying vec3 vSpriteNormal3;
-#endif
+// #ifdef EZ_USE_NORMAL
+// flat varying vec3 vSpriteNormal1;
+// flat varying vec3 vSpriteNormal2;
+// flat varying vec3 vSpriteNormal3;
+// #endif
 
 vec2 encodeDirection(vec3 direction) {
   #ifdef EZ_USE_HEMI_OCTAHEDRON

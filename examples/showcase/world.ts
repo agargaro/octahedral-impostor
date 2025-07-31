@@ -1,6 +1,6 @@
 import { createRadixSort, InstancedMesh2 } from '@three.ez/instanced-mesh';
 import { Asset, Main, PerspectiveCameraAuto } from '@three.ez/main';
-import { AmbientLight, Color, DirectionalLight, FogExp2, FrontSide, Material, Mesh, MeshLambertMaterial, MeshStandardMaterial, RepeatWrapping, Scene, Texture, TextureLoader } from 'three';
+import { AmbientLight, Color, DirectionalLight, FogExp2, Material, Mesh, MeshLambertMaterial, MeshStandardMaterial, RepeatWrapping, Scene, Texture, TextureLoader } from 'three';
 import 'three-hex-tiling';
 import { GLTF, GLTFLoader, MapControls } from 'three/examples/jsm/Addons.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -8,10 +8,13 @@ import { OctahedralImpostor } from '../../src/core/octahedralImpostor.js';
 import { Terrain, TerrainParams } from './terrain.js';
 
 // TODO: render terrain first to avoid impostor overdraw
+// TODO: LOD before impostor
+// TODO: BVH chunk
 
 const camera = new PerspectiveCameraAuto(50, 0.1, 5000).translateZ(20).translateY(5);
 const scene = new Scene();
-const main = new Main(); // init renderer and other stuff
+const main = new Main({ showStats: true }); // init renderer and other stuff
+
 const controls = new MapControls(camera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
 controls.update();
@@ -21,12 +24,20 @@ main.renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio)); // TODO mmm
 Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const mesh = gltf.scene;
 
+  // const loader = new UltraHDRLoader();
+  // loader.type = FloatType;
+  // loader.load(`skybox.jpg`, function (texture) {
+  //   texture.mapping = EquirectangularReflectionMapping;
+  //   scene.background = texture;
+  // });
+
+  scene.background = new Color('cyan');
+
   const directionalLight = new DirectionalLight('white', 3);
   const ambientLight = new AmbientLight('white', 1);
 
   scene.add(directionalLight, ambientLight);
 
-  scene.background = new Color('cyan');
   scene.fog = new FogExp2('cyan', 0.0005);
 
   main.createView({ scene, camera, enabled: false });
@@ -66,12 +77,13 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
   // TREES AND IMPOSTORS
 
   const oldMaterial = mesh.children[0].material as MeshStandardMaterial;
-  mesh.children[0].material = new MeshLambertMaterial({ alphaTest: 0.4, map: oldMaterial.map });
+  mesh.children[0].material = new MeshLambertMaterial({ alphaTest: 0.5, map: oldMaterial.map });
+  mesh.children[0].material.map.generateMipmaps = false;
 
   const mergedGeo = mergeGeometries(mesh.children.map((x) => (x as Mesh).geometry), true);
   const materials = mesh.children.map((x) => (x as Mesh).material as Material);
 
-  const pos = await terrain.generateTrees(100000); // imporve it
+  const pos = await terrain.generateTrees(300000);
 
   const iMesh = new InstancedMesh2(mergedGeo, materials, { createEntities: true, renderer: main.renderer, capacity: pos.length });
 
@@ -84,7 +96,6 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
     obj.position.copy(pos[index]);
     obj.rotateY(Math.random() * Math.PI * 2).rotateX(Math.random() * 0.5 - 0.25);
     obj.scale.setScalar(Math.random() * 0.5 + 0.75);
-    // obj.color.setHSL(Math.random(), 0.5, 0.5);
   });
 
   const impostor = new OctahedralImpostor({
@@ -92,7 +103,7 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
     target: mesh,
     useHemiOctahedron: true,
     transparent: false,
-    alphaClamp: 0.2, // TODO call it alphaTest
+    alphaClamp: 0.5, // TODO call it alphaTest
     spritesPerSide: 12,
     textureSize: 1024,
     baseType: MeshLambertMaterial
