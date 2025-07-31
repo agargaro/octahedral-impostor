@@ -1,7 +1,7 @@
 import { createRadixSort, InstancedMesh2 } from '@three.ez/instanced-mesh';
 import { Asset, Main, PerspectiveCameraAuto } from '@three.ez/main';
 import { simplifyGeometriesByError } from '@three.ez/simplify-geometry';
-import { AmbientLight, Color, DirectionalLight, FogExp2, Material, Mesh, MeshLambertMaterial, MeshStandardMaterial, RepeatWrapping, Scene, Texture, TextureLoader } from 'three';
+import { ACESFilmicToneMapping, AmbientLight, Color, DirectionalLight, FogExp2, Material, Mesh, MeshLambertMaterial, MeshStandardMaterial, RepeatWrapping, Scene, Texture, TextureLoader } from 'three';
 import 'three-hex-tiling';
 import { GLTF, GLTFLoader, MapControls } from 'three/examples/jsm/Addons.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -12,15 +12,19 @@ import { Terrain, TerrainParams } from './terrain.js';
 // TODO: LOD before impostor
 // TODO: BVH chunk
 
-const camera = new PerspectiveCameraAuto(50, 0.1, 1500).translateZ(20).translateY(5);
+const camera = new PerspectiveCameraAuto(50, 0.1, 1500).translateY(50);
 const scene = new Scene();
 const main = new Main({ showStats: true }); // init renderer and other stuff
 
 const controls = new MapControls(camera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
+controls.target.set(500, 0, 0);
 controls.update();
 
 main.renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio)); // TODO mmm...
+
+main.renderer.toneMapping = ACESFilmicToneMapping;
+main.renderer.toneMappingExposure = 0.6;
 
 Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const mesh = gltf.scene;
@@ -40,8 +44,6 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
   scene.add(directionalLight, ambientLight);
 
   scene.fog = new FogExp2('cyan', 0.0012);
-
-  main.createView({ scene, camera, enabled: false });
 
   // TERRAIN
 
@@ -91,8 +93,6 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
   // iMesh.sortObjects = true;
   iMesh.customSort = createRadixSort(iMesh);
 
-  console.log('trees count', pos.length);
-
   iMesh.addInstances(pos.length, (obj, index) => {
     obj.position.copy(pos[index]);
     obj.rotateY(Math.random() * Math.PI * 2).rotateX(Math.random() * 0.5 - 0.25);
@@ -118,4 +118,9 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
   iMesh.computeBVH();
 
   scene.add(iMesh);
+
+  main.createView({ scene, camera, enabled: false });
+
+  document.getElementById('loading').remove();
+  document.getElementById('info').style.display = 'block';
 });

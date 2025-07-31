@@ -8,6 +8,9 @@
   <style>
     html,
     body {
+      font-family: monospace;
+      font-size: 0.9rem;
+      color: white;
       height: 100%;
       margin: 0;
       overflow: hidden;
@@ -21,10 +24,31 @@
       touch-action: none;
       user-select: none;
     }
+
+    #loading {
+      color: black;
+    }
+
+    .info {
+      position: fixed;
+      top: 50px;
+      left: 5px;
+    }
+
+    a {
+      color: white;
+    }
   </style>
 </head>
 
 <body>
+  <span id="loading" class="info">Loading...</span>
+  <span class="info" style="display: none">
+    BatchedMesh with 4 geometries and 1 million instances. <br>
+    Frustum culling and raycasting are accelerated by using a BVH. <br>
+    ⭐ If you like this example please leave a star on the github 
+    <a href="https://github.com/agargaro/batched-mesh-extensions">repository</a>.
+  </span>
   <script type="module" src="./examples/showcase/world.ts"></script>
 </body>
 
