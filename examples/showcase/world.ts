@@ -1,6 +1,7 @@
 import { createRadixSort, InstancedMesh2 } from '@three.ez/instanced-mesh';
 import { Asset, Main, PerspectiveCameraAuto } from '@three.ez/main';
-import { AmbientLight, Color, DirectionalLight, Fog, Material, Mesh, MeshLambertMaterial, MeshStandardMaterial, RepeatWrapping, Scene, Texture, TextureLoader } from 'three';
+import { simplifyGeometriesByError } from '@three.ez/simplify-geometry';
+import { AmbientLight, Color, DirectionalLight, FogExp2, Material, Mesh, MeshLambertMaterial, MeshStandardMaterial, RepeatWrapping, Scene, Texture, TextureLoader } from 'three';
 import 'three-hex-tiling';
 import { GLTF, GLTFLoader, MapControls } from 'three/examples/jsm/Addons.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -38,7 +39,7 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
 
   scene.add(directionalLight, ambientLight);
 
-  scene.fog = new Fog('cyan', 1000, 1500);
+  scene.fog = new FogExp2('cyan', 0.0012);
 
   main.createView({ scene, camera, enabled: false });
 
@@ -109,7 +110,10 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
     baseType: MeshLambertMaterial
   });
 
-  // iMesh.addLOD(impostor.geometry, impostor.material, 20);
+  const LODGeo = await simplifyGeometriesByError(mesh.children.map((x) => (x as Mesh).geometry), [0, 0.01]); // improve
+  const mergedGeoLOD = mergeGeometries(LODGeo, true);
+
+  iMesh.addLOD(mergedGeoLOD, mesh.children.map((x) => ((x as Mesh).material as Material).clone()), 20);
   iMesh.addLOD(impostor.geometry, impostor.material, 100);
   iMesh.computeBVH();
 
