@@ -1,6 +1,6 @@
 import { createRadixSort, InstancedMesh2 } from '@three.ez/instanced-mesh';
 import { Asset, Main, PerspectiveCameraAuto } from '@three.ez/main';
-import { AmbientLight, Color, DirectionalLight, FogExp2, Material, Mesh, MeshLambertMaterial, MeshStandardMaterial, RepeatWrapping, Scene, Texture, TextureLoader } from 'three';
+import { AmbientLight, Color, DirectionalLight, Fog, Material, Mesh, MeshLambertMaterial, MeshStandardMaterial, RepeatWrapping, Scene, Texture, TextureLoader } from 'three';
 import 'three-hex-tiling';
 import { GLTF, GLTFLoader, MapControls } from 'three/examples/jsm/Addons.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -11,7 +11,7 @@ import { Terrain, TerrainParams } from './terrain.js';
 // TODO: LOD before impostor
 // TODO: BVH chunk
 
-const camera = new PerspectiveCameraAuto(50, 0.1, 5000).translateZ(20).translateY(5);
+const camera = new PerspectiveCameraAuto(50, 0.1, 1500).translateZ(20).translateY(5);
 const scene = new Scene();
 const main = new Main({ showStats: true }); // init renderer and other stuff
 
@@ -33,12 +33,12 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
 
   scene.background = new Color('cyan');
 
-  const directionalLight = new DirectionalLight('white', 3);
+  const directionalLight = new DirectionalLight('white', 2);
   const ambientLight = new AmbientLight('white', 1);
 
   scene.add(directionalLight, ambientLight);
 
-  scene.fog = new FogExp2('cyan', 0.0005);
+  scene.fog = new Fog('cyan', 1000, 1500);
 
   main.createView({ scene, camera, enabled: false });
 
@@ -53,8 +53,8 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
   grassMap.repeat.set(100, 100);
 
   const options: TerrainParams = {
-    maxChunksX: 16,
-    maxChunksZ: 16,
+    maxChunksX: 24,
+    maxChunksZ: 24,
     chunkSize: 128,
     segments: 56,
     frequency: 0.001,
@@ -77,13 +77,13 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
   // TREES AND IMPOSTORS
 
   const oldMaterial = mesh.children[0].material as MeshStandardMaterial;
-  mesh.children[0].material = new MeshLambertMaterial({ alphaTest: 0.5, map: oldMaterial.map });
+  mesh.children[0].material = new MeshLambertMaterial({ alphaTest: 0.4, map: oldMaterial.map });
   mesh.children[0].material.map.generateMipmaps = false;
 
   const mergedGeo = mergeGeometries(mesh.children.map((x) => (x as Mesh).geometry), true);
   const materials = mesh.children.map((x) => (x as Mesh).material as Material);
 
-  const pos = await terrain.generateTrees(300000);
+  const pos = await terrain.generateTrees(200000);
 
   const iMesh = new InstancedMesh2(mergedGeo, materials, { createEntities: true, renderer: main.renderer, capacity: pos.length });
 
@@ -103,12 +103,13 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
     target: mesh,
     useHemiOctahedron: true,
     transparent: false,
-    alphaClamp: 0.5, // TODO call it alphaTest
+    alphaClamp: 0.4,
     spritesPerSide: 12,
     textureSize: 1024,
     baseType: MeshLambertMaterial
   });
 
+  // iMesh.addLOD(impostor.geometry, impostor.material, 20);
   iMesh.addLOD(impostor.geometry, impostor.material, 100);
   iMesh.computeBVH();
 

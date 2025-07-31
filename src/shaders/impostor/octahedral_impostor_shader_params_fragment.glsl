@@ -25,19 +25,13 @@ varying vec2 vSpriteUV3;
 // flat varying vec3 vSpriteNormal3;
 // #endif
 
-vec4 blendImpostorSamples(vec2 uv1, vec2 uv2, vec2 uv3) {
-  vec4 sprite1 = texture(map, uv1);
-  vec4 sprite2 = texture(map, uv2);
-  vec4 sprite3 = texture(map, uv3);
-
-  return sprite1 * vSpritesWeight.x + sprite2 * vSpritesWeight.y + sprite3 * vSpritesWeight.z;
-}
-
 #ifdef EZ_USE_NORMAL
 vec3 blendNormals(vec2 uv1, vec2 uv2, vec2 uv3) {
-  vec4 normalDepth1 = texture2D(normalMap, uv1); // lo stiamo leggendo due volte, migliorare perchè lo leggiamo per il depth anche
+  vec4 normalDepth1 = texture2D(normalMap, uv1); // we're reading twice if parallax enabled
   vec4 normalDepth2 = texture2D(normalMap, uv2);
   vec4 normalDepth3 = texture2D(normalMap, uv3);
+
+  // Fix normal if blended bad
 
   return normalize(normalDepth1.xyz * vSpritesWeight.x + normalDepth2.xyz * vSpritesWeight.y + normalDepth3.xyz * vSpritesWeight.z);
 }
