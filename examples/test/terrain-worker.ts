@@ -1,6 +1,6 @@
 import { simplifyGeometry } from '@three.ez/simplify-geometry';
-import { BufferGeometry } from 'three';
-import { enqueue, GenerateChunkGeometryCallback, init, LODCount, Position, remove, updatePlayerPosition, WorkerData as WorkerRequest, WorkerResponse } from './shared.js';
+import { BufferGeometry, Vector3 } from 'three';
+import { enqueue, GenerateChunkGeometryCallback, init, LODCount, remove, updatePlayerPosition, WorkerData as WorkerRequest, WorkerResponse } from './shared.js';
 
 // TODO: use array only instead
 // TODO: add LOD levels count parameter
@@ -9,6 +9,8 @@ import { enqueue, GenerateChunkGeometryCallback, init, LODCount, Position, remov
 // TODO: send only N messages per frame
 
 const queue: string[] = [];
+
+const position = new Vector3();
 
 let generateChunkGeometry: GenerateChunkGeometryCallback | null = null;
 let size: number | null = null;
@@ -21,7 +23,7 @@ onmessage = async function (e) {
 
   switch (data.type) {
     case init:
-      _init(data.scriptPath, data.size, data.segments);
+      _init(data.scriptPath, data.size, data.segments, data.position);
       return;
     case enqueue:
       _enqueue(data.chunkId);
@@ -35,8 +37,8 @@ onmessage = async function (e) {
   }
 };
 
-async function _init(scriptPath: string, _size: number, _segments: number): Promise<void> {
-  const module = await import(scriptPath);
+async function _init(scriptPath: string, _size: number, _segments: number, _position: Vector3): Promise<void> {
+  const module = await import(/* @vite-ignore */ scriptPath);
   generateChunkGeometry = module.generateChunkGeometry;
 
   if (generateChunkGeometry === undefined) {
@@ -45,6 +47,7 @@ async function _init(scriptPath: string, _size: number, _segments: number): Prom
 
   size = _size;
   segments = _segments;
+  _updatePlayerPosition(_position);
 
   isRunning = false;
   update();
@@ -62,8 +65,22 @@ function _remove(chunkId: string): void {
   }
 }
 
-function _updatePlayerPosition(position: Position): void {
-  // Handle player position update logic here
+function _updatePlayerPosition(_position: Vector3): void {
+  position.copy(_position);
+  sortChunks();
+}
+
+function sortChunks(): void {
+  // TODO improve sort
+  queue.sort((a, b) => {
+    const { x: ax, z: az } = decodeId(a);
+    const { x: bx, z: bz } = decodeId(b);
+
+    const distA = Math.abs(ax - position.x) + Math.abs(az - position.z);
+    const distB = Math.abs(bx - position.x) + Math.abs(bz - position.z);
+
+    return distA - distB;
+  });
 }
 
 async function update(): Promise<void> {
@@ -71,7 +88,7 @@ async function update(): Promise<void> {
 
   isRunning = true;
 
-  while (queue.length > 0) {
+  while (queue.length > 0) { // TODO add flag to wait sort?
     const chunkId = queue.shift();
     await process(chunkId);
   }

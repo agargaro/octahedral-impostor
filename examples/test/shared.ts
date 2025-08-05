@@ -1,6 +1,5 @@
-import type { BufferGeometry, TypedArray } from 'three';
+import type { BufferGeometry, TypedArray, Vector3 } from 'three';
 
-export type Position = { x: number; y: number; z: number };
 export type GenerateChunkGeometryCallback = (x: number, z: number, size: number, segments: number) => BufferGeometry;
 
 // TODO better typing based on type
@@ -10,7 +9,7 @@ export interface WorkerData {
   size?: number;
   segments?: number;
   chunkId?: string;
-  position?: Position;
+  position?: Vector3;
 }
 
 export interface WorkerResponse {

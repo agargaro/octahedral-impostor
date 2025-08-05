@@ -4,7 +4,9 @@ import 'three-hex-tiling';
 import { MapControls } from 'three/examples/jsm/Addons.js';
 import { Terrain } from './terrain.js';
 
-const camera = new PerspectiveCameraAuto(50, 0.1, 50000).translateY(2000);
+// 130kb per chunk
+
+const camera = new PerspectiveCameraAuto(50, 0.1, 5000).translateY(3000);
 const scene = new Scene();
 const main = new Main(); // init renderer and other stuff
 
@@ -23,13 +25,7 @@ grassMap.repeat.set(100, 100);
 
 const terrain = new Terrain(new MeshStandardMaterial({ color: 0xdddddd, map: grassMap, normalMap: grassNormalMap, hexTiling: {} }), {
   coordinateSystem: WebGLCoordinateSystem,
-  scriptPath: './terrain-generator.js',
-  workerCount: 2,
-  maxChunkProcessedPerUpdate: Infinity,
-  maxChunksX: 31,
-  maxChunksZ: 31,
-  chunkSize: 128,
-  segments: 48
+  scriptPath: './terrain-generator.js'
 });
 
 const position = new Vector3(0, 0, 0);

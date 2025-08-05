@@ -2,23 +2,69 @@ import { createRadixSort, extendBatchedMeshPrototype } from '@three.ez/batched-m
 import { BatchedMesh, BufferAttribute, CoordinateSystem, DynamicDrawUsage, Material, Matrix4, PlaneGeometry, TypedArray, Vector3 } from 'three';
 import { enqueue, init, remove, WorkerData, WorkerResponse } from './shared.js';
 
+// INFO: instanceId and geometryId are the same
+
 // TODO: better LOD optimization if after first simplifcation the appearance error is too low
 // TODO: preserve some chunks to avoid to recalculate them
 // TODO: add distance check to calculate chunks near player before
 // TODO: uv are always equals for each geometry... can we save a bit of memory?
+// TODO use simpler object for position?
 
 extendBatchedMeshPrototype(); // TODO remove
 
 export interface TerrainParams {
+  /**
+   * The coordinate system used to create the TLAS BVH
+   */
   coordinateSystem: CoordinateSystem;
+  /**
+   * The path to the terrain generation script
+   */
   scriptPath: string;
+  /**
+   * The maximum number of chunks in the X direction
+   * @default 23
+   */
   maxChunksX?: number;
+  /**
+   * The maximum number of chunks in the Z direction
+   * @default 23
+   */
   maxChunksZ?: number;
+  /**
+   * The size of each chunk
+   * @default 128
+   */
   chunkSize?: number;
+  /**
+   * The number of segments in each chunk
+   * @default 48
+   */
   segments?: number;
+  /**
+   * The position of the player, used to calculate the chunks to generate
+   * @default new Vector3(0, 0, 0)
+   */
+  playerPosition?: Vector3;
+  /**
+   * Multiplier to reserve a larger index buffer used for LODs
+   * @default 2
+   */
   multiplierLODReservedIndex?: number;
+  /**
+   * The number of workers to use for terrain generation
+   * @default 2
+   */
   workerCount?: number;
+  /**
+   * The maximum number of chunks processed per update
+   * @default 62
+   */
   maxChunkProcessedPerUpdate?: number;
+  /**
+   * The rate at which the terrain is updated
+   * @default 0.25 (4 times per second)
+   */
   updateRate?: number;
 }
 
@@ -32,8 +78,6 @@ interface ChunkInfo {
 
 const queued = 0;
 const ready = 1;
-
-// INFO: instanceId and geometryId are the same
 
 export class Terrain<M extends Material> extends BatchedMesh {
   declare material: M;
@@ -50,17 +94,17 @@ export class Terrain<M extends Material> extends BatchedMesh {
   protected readonly _workerCount: number;
   protected readonly _maxChunkProcessedPerFrame: number;
   protected readonly _updateRate: number;
+  protected readonly _lastPlayerPosition: Vector3;
   protected _lastUpdateTime = 0;
-  protected _lastPlayerPosition: Vector3 | null = null;
   protected _workerRequestCount = 0;
 
   constructor(material: M, options: TerrainParams) {
     if (!options.coordinateSystem) throw new Error('coordinateSystem is required');
     if (!options.scriptPath) throw new Error('scriptPath is required');
 
-    const maxChunksX = options.maxChunksX ?? 24;
-    const maxChunksZ = options.maxChunksZ ?? 24;
-    const segments = options.segments ?? 56;
+    const maxChunksX = options.maxChunksX ?? 23;
+    const maxChunksZ = options.maxChunksZ ?? 23;
+    const segments = options.segments ?? 48;
     const chunkSize = options.chunkSize ?? 128;
     const multiplierLODReservedIndex = options.multiplierLODReservedIndex ?? 2;
 
@@ -77,15 +121,17 @@ export class Terrain<M extends Material> extends BatchedMesh {
     this._maxChunksZ = maxChunksZ;
     this._segments = segments;
     this._multiplierLODReservedIndex = multiplierLODReservedIndex;
-    this._workerCount = options.workerCount ?? 4;
-    this._maxChunkProcessedPerFrame = options.maxChunkProcessedPerUpdate ?? 32;
+    this._workerCount = options.workerCount ?? 2;
+    this._maxChunkProcessedPerFrame = options.maxChunkProcessedPerUpdate ?? 62;
     this._updateRate = options.updateRate ?? 0.25;
+    this._lastPlayerPosition = options.playerPosition?.clone() ?? new Vector3();
+    this._planeGeometryBase = new PlaneGeometry(chunkSize, chunkSize, segments, segments);
 
     this.frustumCulled = false;
 
     this._workers = this.initWorkers(options.scriptPath);
 
-    this._planeGeometryBase = new PlaneGeometry(chunkSize, chunkSize, segments, segments);
+    this.enqueueAll();
 
     this.computeBVH(options.coordinateSystem);
     this.customSort = createRadixSort(this as unknown as BatchedMesh);
@@ -96,11 +142,12 @@ export class Terrain<M extends Material> extends BatchedMesh {
     const count = this._workerCount;
     const segments = this._segments;
     const size = this._chunkSize;
+    const position = this._lastPlayerPosition;
 
     for (let i = 0; i < count; i++) {
       const worker = new Worker(new URL('terrain-worker.js', import.meta.url), { type: 'module' });
 
-      worker.postMessage({ type: init, scriptPath, segments, size } satisfies WorkerData);
+      worker.postMessage({ type: init, scriptPath, segments, size, position } satisfies WorkerData);
 
       worker.onmessage = (event) => {
         // TODO move it in a function
@@ -120,6 +167,37 @@ export class Terrain<M extends Material> extends BatchedMesh {
     }
 
     return workers;
+  }
+
+  protected enqueueAll(): void {
+    // TODO add start from origin
+    const startX = Math.floor(this._maxChunksX / -2);
+    const startZ = Math.floor(this._maxChunksZ / -2);
+
+    for (let x = 0; x < this._maxChunksX; x++) {
+      for (let z = 0; z < this._maxChunksZ; z++) {
+        this.enqueueChunk(startX + x, startZ + z);
+      }
+    }
+  }
+
+  /**
+   * Updates the terrain based on the player's position and the delta time.
+   * @param delta The time since the last update.
+   * @param position The current position of the player.
+   */
+  public update(delta: number, position: Vector3): void {
+    this._lastUpdateTime += delta;
+    if (this._lastUpdateTime < this._updateRate) return;
+    this._lastUpdateTime %= this._updateRate;
+
+    // TODO check diff and enqueue chunks
+
+    this._lastPlayerPosition.copy(position);
+
+    // TODO check se ho già callato postMessage con nuova pos
+
+    this.updateChunks();
   }
 
   protected updateChunks(): void {
@@ -152,34 +230,6 @@ export class Terrain<M extends Material> extends BatchedMesh {
     }
   }
 
-  public update(delta: number, position: Vector3): void {
-    if (this._lastPlayerPosition === null) {
-      // first time, enqueue all chunks
-      this._lastPlayerPosition = position.clone();
-
-      const startX = Math.floor(this._maxChunksX / -2);
-      const startZ = Math.floor(this._maxChunksZ / -2);
-
-      for (let x = 0; x < this._maxChunksX; x++) {
-        for (let z = 0; z < this._maxChunksZ; z++) {
-          this.enqueueChunk(startX + x, startZ + z);
-        }
-      }
-
-      return;
-    }
-
-    this._lastUpdateTime += delta;
-    if (this._lastUpdateTime < this._updateRate) return;
-    this._lastUpdateTime %= this._updateRate;
-
-    // TODO check diff and enqueue chunks
-
-    this._lastPlayerPosition.copy(position);
-
-    this.updateChunks();
-  }
-
   protected enqueueChunk(x: number, z: number): void {
     const chunkId = this.encodeId(x, z);
     if (this._map.has(chunkId)) return;
@@ -210,6 +260,10 @@ export class Terrain<M extends Material> extends BatchedMesh {
     chunkInfo.indexes = null;
 
     return geometryId;
+  }
+
+  protected updateGeometry(chunkId: string, oldChunkId: string): void {
+    // TODO
   }
 
   protected addGeometries(position: TypedArray, normal: TypedArray, indexes: TypedArray[]): number {
