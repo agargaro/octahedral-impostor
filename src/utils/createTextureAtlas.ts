@@ -1,4 +1,4 @@
-import { GLSL3, HalfFloatType, IUniform, LinearFilter, LinearSRGBColorSpace, Material, Mesh, MeshStandardMaterial, NearestFilter, NoColorSpace, Object3D, OrthographicCamera, ShaderMaterial, Sphere, Texture, UnsignedByteType, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { GLSL3, HalfFloatType, IUniform, LinearFilter, LinearMipmapLinearFilter, LinearSRGBColorSpace, Material, Mesh, MeshStandardMaterial, NearestFilter, NearestMipMapNearestFilter, NoColorSpace, Object3D, OrthographicCamera, ShaderMaterial, Sphere, Texture, UnsignedByteType, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { computeObjectBoundingSphere } from './computeObjectBoundingSphere.js';
 import { hemiOctaGridToDir, octaGridToDir } from './octahedronUtils.js';
 
@@ -183,19 +183,19 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
     renderer.getScissor(oldScissor);
     renderer.getViewport(oldViewport);
 
-    const renderTarget = new WebGLRenderTarget(atlasSize, atlasSize, { count: 2, generateMipmaps: false });
+    const renderTarget = new WebGLRenderTarget(atlasSize, atlasSize, { count: 2, generateMipmaps: true });
 
     const albedo = 0;
     const normalDepth = 1;
 
-    renderTarget.textures[albedo].minFilter = LinearFilter;
+    renderTarget.textures[albedo].minFilter = LinearMipmapLinearFilter;
     renderTarget.textures[albedo].magFilter = LinearFilter;
     renderTarget.textures[albedo].type = UnsignedByteType;
     renderTarget.textures[albedo].colorSpace = renderer.outputColorSpace;
 
-    renderTarget.textures[normalDepth].minFilter = NearestFilter;
+    renderTarget.textures[normalDepth].minFilter = NearestMipMapNearestFilter;
     renderTarget.textures[normalDepth].magFilter = NearestFilter;
-    renderTarget.textures[normalDepth].type = HalfFloatType;
+    renderTarget.textures[normalDepth].type = HalfFloatType; // TODO parametric
     renderTarget.textures[normalDepth].colorSpace = LinearSRGBColorSpace;
 
     renderer.setRenderTarget(renderTarget);

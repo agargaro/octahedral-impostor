@@ -1,4 +1,4 @@
-import { Asset, Main } from '@three.ez/main';
+import { load, Main } from '@three.ez/main';
 import { BufferGeometry, BufferGeometryLoader, Mesh, MeshLambertMaterial, MeshNormalMaterial } from 'three';
 import { exportTextureFromRenderTarget } from '../src/utils/exportTextureFromRenderTarget.js';
 import { createTextureAtlas, OctahedralImpostor } from '../src/index.js';
@@ -6,7 +6,7 @@ import { GLTF, GLTFLoader } from 'three/examples/jsm/Addons.js';
 
 const main = new Main();
 
-Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
+load(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const mesh = gltf.scene;
   const impostor = new OctahedralImpostor({
     renderer: main.renderer,

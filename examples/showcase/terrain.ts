@@ -1,5 +1,4 @@
 import { createRadixSort, extendBatchedMeshPrototype } from '@three.ez/batched-mesh-extensions';
-import { InstancedMesh2 } from '@three.ez/instanced-mesh';
 import { simplifyGeometry } from '@three.ez/simplify-geometry';
 import { createNoise2D } from 'simplex-noise';
 import { BatchedMesh, BufferGeometry, Material, Matrix4, PlaneGeometry, Vector3, WebGLCoordinateSystem } from 'three';

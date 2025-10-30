@@ -1,8 +1,8 @@
-import { createRadixSort, InstancedMesh2 } from '@three.ez/instanced-mesh';
-import { Asset, Main, PerspectiveCameraAuto } from '@three.ez/main';
+import { InstancedMesh2 } from '@three.ez/instanced-mesh';
+import { load, Main, PerspectiveCameraAuto } from '@three.ez/main';
 import { simplifyGeometriesByError } from '@three.ez/simplify-geometry';
-import { AmbientLight, BufferGeometry, Color, DirectionalLight, FogExp2, Material, Mesh, MeshLambertMaterial, MeshStandardMaterial, RepeatWrapping, Scene, Texture, TextureLoader } from 'three';
-import { GLTF, GLTFLoader, MapControls } from 'three/examples/jsm/Addons.js';
+import { AmbientLight, Color, DirectionalLight, FogExp2, Material, Mesh, MeshLambertMaterial, RepeatWrapping, Scene, TextureLoader } from 'three';
+import { GLTFLoader, MapControls } from 'three/examples/jsm/Addons.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { OctahedralImpostor } from '../../src/core/octahedralImpostor.js';
 import { Terrain, TerrainParams } from './terrain.js';
@@ -16,9 +16,9 @@ controls.maxPolarAngle = Math.PI / 2;
 controls.target.set(500, 0, 0);
 controls.update();
 
-main.renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio)); // TODO mmm...
+main.renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio));
 
-Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
+load(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const mesh = gltf.scene;
 
   scene.background = new Color('cyan');
@@ -32,7 +32,7 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
 
   // TERRAIN
 
-  const grassMap = await Asset.load<Texture>(TextureLoader, 'grass.jpg');
+  const grassMap = await load(TextureLoader, 'grass.jpg');
   grassMap.wrapS = grassMap.wrapT = RepeatWrapping;
   grassMap.repeat.set(50, 50);
 
@@ -49,7 +49,8 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
   };
 
   const terrain = new Terrain(new MeshLambertMaterial({ color: 0xaaaaaa, map: grassMap }), options);
-  terrain.renderOrder = 1;
+  // terrain.renderOrder = 1;
+  terrain.renderOrder = -1; // this can be based on camera rotation
 
   for (let x = -(options.maxChunksX / 2); x < (options.maxChunksX / 2); x++) {
     for (let z = -(options.maxChunksZ / 2); z < (options.maxChunksZ / 2); z++) {
@@ -60,19 +61,10 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
 
   // TREES AND IMPOSTORS
 
-  const leavesMesh = mesh.children[0] as Mesh<BufferGeometry, MeshLambertMaterial>;
-  const oldLeaveesMaterial = leavesMesh.material;
-  leavesMesh.material = new MeshLambertMaterial({ alphaTest: 0.4, map: oldLeaveesMaterial.map });
-  leavesMesh.material.map.generateMipmaps = false;
-
-  const trunkMesh = mesh.children[1] as Mesh<BufferGeometry, MeshLambertMaterial>;
-  const oldTrunkMaterial = trunkMesh.material;
-  trunkMesh.material = new MeshLambertMaterial({ map: oldTrunkMaterial.map });
-
   const mergedGeo = mergeGeometries(mesh.children.map((x) => (x as Mesh).geometry), true);
   const materials = mesh.children.map((x) => (x as Mesh).material as Material);
 
-  const pos = await terrain.generateTrees(200000);
+  const pos = await terrain.generateTrees(500000);
 
   const iMesh = new InstancedMesh2(mergedGeo, materials, { createEntities: true, renderer: main.renderer, capacity: pos.length });
 
@@ -90,17 +82,20 @@ Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
     target: mesh,
     useHemiOctahedron: true,
     transparent: false,
-    alphaClamp: 0.4,
+    alphaClamp: 0.3,
     spritesPerSide: 12,
-    textureSize: 1024,
+    textureSize: 2048,
     baseType: MeshLambertMaterial
   });
+
+  // impostor.material.normalScale.set(-0.5, 0.5);
+  // impostor.material.alphaToCoverage = true;
 
   const LODGeo = await simplifyGeometriesByError(mesh.children.map((x) => (x as Mesh).geometry), [0, 0.01]); // improve
   const mergedGeoLOD = mergeGeometries(LODGeo, true);
 
-  iMesh.addLOD(mergedGeoLOD, mesh.children.map((x) => ((x as Mesh).material as Material).clone()), 20);
-  iMesh.addLOD(impostor.geometry, impostor.material, 100);
+  iMesh.addLOD(mergedGeoLOD, mesh.children.map((x) => ((x as Mesh).material as Material).clone()), 10);
+  iMesh.addLOD(impostor.geometry, impostor.material, 70);
   iMesh.computeBVH();
 
   scene.add(iMesh);
