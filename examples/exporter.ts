@@ -1,20 +1,31 @@
 import { Asset, Main } from '@three.ez/main';
-import { BufferGeometry, BufferGeometryLoader, Mesh, MeshNormalMaterial } from 'three';
-import { createAlbedo } from '../src/utils/createTextureAtlas.js';
+import { BufferGeometry, BufferGeometryLoader, Mesh, MeshLambertMaterial, MeshNormalMaterial } from 'three';
 import { exportTextureFromRenderTarget } from '../src/utils/exportTextureFromRenderTarget.js';
+import { createTextureAtlas, OctahedralImpostor } from '../src/index.js';
+import { GLTF, GLTFLoader } from 'three/examples/jsm/Addons.js';
 
 const main = new Main();
-// const treeGLTF = await Asset.load<GLTF>(GLTFLoader, 'tree.gltf');
-// treeGLTF.scene.add(new AmbientLight('white', 5)); // TODO remove ambient light
-// const target = treeGLTF.scene;
 
-const geometry = await Asset.load<BufferGeometry>(BufferGeometryLoader, 'https://threejs.org/examples/models/json/suzanne_buffergeometry.json');
-geometry.computeVertexNormals();
-const target = new Mesh(geometry, new MeshNormalMaterial());
+Asset.load<GLTF>(GLTFLoader, 'tree.glb').then(async (gltf) => {
+  const mesh = gltf.scene;
+  const impostor = new OctahedralImpostor({
+    renderer: main.renderer,
+    target: mesh,
+    useHemiOctahedron: true,
+    transparent: false,
+    alphaClamp: 0.4,
+    spritesPerSide: 12,
+    textureSize: 1024,
+    baseType: MeshLambertMaterial
+  });
 
-target.updateMatrixWorld(true);
+  const { renderTarget } = createTextureAtlas({
+    renderer: main.renderer,
+    target: mesh,
+    useHemiOctahedron: true,
+    spritesPerSide: 12,
+    textureSize: 1024
+  });
 
-const renderTarget = createAlbedo(main.renderer, { target, useHemiOctahedron: true, spritesPerSide: 16 });
-// const renderTarget = createAlbedo(main.renderer, target, { useHemiOctahedron: true, spritesPerSide: 16 });
-
-exportTextureFromRenderTarget(main.renderer, renderTarget, 'albedo');
+  exportTextureFromRenderTarget(main.renderer, renderTarget, 'albedo', 0);
+});
