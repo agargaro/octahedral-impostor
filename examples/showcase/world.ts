@@ -1,7 +1,7 @@
 import { InstancedMesh2 } from '@three.ez/instanced-mesh';
 import { load, Main, PerspectiveCameraAuto } from '@three.ez/main';
 import { simplifyGeometriesByError } from '@three.ez/simplify-geometry';
-import { ACESFilmicToneMapping, AmbientLight, BoxGeometry, CameraHelper, Color, DirectionalLight, DirectionalLightHelper, FogExp2, Material, Mesh, MeshLambertMaterial, PCFSoftShadowMap, RepeatWrapping, Scene, Sphere, SphereGeometry, TextureLoader, Vector3 } from 'three';
+import { ACESFilmicToneMapping, AmbientLight, BoxGeometry, Color, DirectionalLight, FogExp2, Material, Mesh, MeshLambertMaterial, PCFSoftShadowMap, RepeatWrapping, Scene, TextureLoader, Vector3 } from 'three';
 import { GLTFLoader, MapControls } from 'three/examples/jsm/Addons.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { OctahedralImpostor } from '../../src/core/octahedralImpostor.js';
@@ -21,7 +21,7 @@ controls.maxPolarAngle = Math.PI / 2;
 controls.target.set(500, 0, 0);
 controls.update();
 
-main.renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio));
+main.renderer.setPixelRatio(Math.min(1.25, window.devicePixelRatio));
 
 load(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const mesh = gltf.scene;
@@ -58,10 +58,10 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
   grassMap.repeat.set(50, 50);
 
   const options: TerrainParams = {
-    maxChunksX: 24,
-    maxChunksZ: 24,
+    maxChunksX: 12,
+    maxChunksZ: 12,
     chunkSize: 256,
-    segments: 64,
+    segments: 96,
     frequency: 0.001,
     amplitude: 150,
     octaves: 4,
@@ -87,7 +87,7 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const mergedGeo = mergeGeometries(mesh.children.map((x) => (x as Mesh).geometry), true);
   const materials = mesh.children.map((x) => (x as Mesh).material as Material);
 
-  const pos = await terrain.generateTrees(1000000);
+  const pos = await terrain.generateTrees(300000);
 
   const iMesh = new InstancedMesh2(mergedGeo, materials, { createEntities: true, renderer: main.renderer, capacity: pos.length });
 
@@ -112,7 +112,7 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const mergedGeoLOD = mergeGeometries(LODGeo, true);
 
   iMesh.addLOD(mergedGeoLOD, mesh.children.map((x) => ((x as Mesh).material as Material).clone()), 5);
-  iMesh.addLOD(impostor.geometry, impostor.material, 60);
+  iMesh.addLOD(impostor.geometry, impostor.material, 50);
   iMesh.addShadowLOD(new BoxGeometry(3, 10, 3));
   iMesh.computeBVH();
 
