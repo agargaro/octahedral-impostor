@@ -7,7 +7,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { OctahedralImpostor } from '../../src/core/octahedralImpostor.js';
 import { Terrain, TerrainParams } from './terrain.js';
 
-const camera = new PerspectiveCameraAuto(50, 0.1, 1500).translateY(50);
+const camera = new PerspectiveCameraAuto(50, 0.1, 1200).translateY(50);
 const scene = new Scene();
 const main = new Main({ showStats: true, rendererParameters: { antialias: false } }); // init renderer and other stuff
 
@@ -28,7 +28,7 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
 
   scene.add(directionalLight, ambientLight);
 
-  scene.fog = new FogExp2('cyan', 0.0012);
+  scene.fog = new FogExp2('cyan', 0.0015);
 
   // TERRAIN
 
@@ -39,8 +39,8 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const options: TerrainParams = {
     maxChunksX: 24,
     maxChunksZ: 24,
-    chunkSize: 128,
-    segments: 56,
+    chunkSize: 256,
+    segments: 64,
     frequency: 0.001,
     amplitude: 150,
     octaves: 4,
@@ -64,7 +64,7 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const mergedGeo = mergeGeometries(mesh.children.map((x) => (x as Mesh).geometry), true);
   const materials = mesh.children.map((x) => (x as Mesh).material as Material);
 
-  const pos = await terrain.generateTrees(500000);
+  const pos = await terrain.generateTrees(1000000);
 
   const iMesh = new InstancedMesh2(mergedGeo, materials, { createEntities: true, renderer: main.renderer, capacity: pos.length });
 
@@ -82,9 +82,9 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
     target: mesh,
     useHemiOctahedron: true,
     transparent: false,
-    alphaClamp: 0.3,
-    spritesPerSide: 12,
-    textureSize: 2048,
+    alphaClamp: 0.4,
+    spritesPerSide: 16,
+    textureSize: 4096,
     baseType: MeshLambertMaterial
   });
 
@@ -94,7 +94,7 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const LODGeo = await simplifyGeometriesByError(mesh.children.map((x) => (x as Mesh).geometry), [0, 0.01]); // improve
   const mergedGeoLOD = mergeGeometries(LODGeo, true);
 
-  iMesh.addLOD(mergedGeoLOD, mesh.children.map((x) => ((x as Mesh).material as Material).clone()), 10);
+  iMesh.addLOD(mergedGeoLOD, mesh.children.map((x) => ((x as Mesh).material as Material).clone()), 5);
   iMesh.addLOD(impostor.geometry, impostor.material, 70);
   iMesh.computeBVH();
 

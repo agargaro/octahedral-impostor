@@ -1,4 +1,4 @@
-import { GLSL3, HalfFloatType, IUniform, LinearFilter, LinearMipmapLinearFilter, LinearSRGBColorSpace, Material, Mesh, MeshStandardMaterial, NearestFilter, NearestMipMapNearestFilter, NoColorSpace, Object3D, OrthographicCamera, ShaderMaterial, Sphere, Texture, UnsignedByteType, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { GLSL3, HalfFloatType, IUniform, LinearFilter, LinearMipmapLinearFilter, LinearSRGBColorSpace, Material, Mesh, MeshStandardMaterial, NearestFilter, NearestMipMapNearestFilter, Object3D, OrthographicCamera, ShaderMaterial, Sphere, Texture, UnsignedByteType, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { computeObjectBoundingSphere } from './computeObjectBoundingSphere.js';
 import { hemiOctaGridToDir, octaGridToDir } from './octahedronUtils.js';
 
@@ -120,22 +120,90 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
 
   function createMaterial(material: Material): ShaderMaterial {
     const uniforms: { [uniform: string]: IUniform } = {
+      // Basic
+      diffuse: { value: (material as MeshStandardMaterial).color },
+      opacity: { value: material.opacity },
       map: { value: (material as MeshStandardMaterial).map },
-      alphaTest: { value: (material as MeshStandardMaterial).alphaTest }
-      // normalMap: { value: (material as MeshStandardMaterial).normalMap }
+      mapTransform: { value: (material as MeshStandardMaterial).map.matrix },
+      // lightMap: { value: (material as MeshStandardMaterial).lightMap },
+      // lightMapIntensity: { value: (material as MeshStandardMaterial).lightMapIntensity },
+      // aoMap: { value: (material as MeshStandardMaterial).aoMap },
+      // aoMapIntensity: { value: (material as MeshStandardMaterial).aoMapIntensity },
+      // alphaMap: { value: (material as MeshStandardMaterial).alphaMap },
+
+      // Normal
+      // bumpMap: { value: (material as MeshStandardMaterial).bumpMap },
+      // bumpScale: { value: (material as MeshStandardMaterial).bumpScale },
+      normalMap: { value: (material as MeshStandardMaterial).normalMap },
+      normalMapType: { value: (material as MeshStandardMaterial).normalMapType },
+      normalScale: { value: (material as MeshStandardMaterial).normalScale }
+      // displacementMap: { value: (material as MeshStandardMaterial).displacementMap },
+      // displacementScale: { value: (material as MeshStandardMaterial).displacementScale },
+      // displacementBias: { value: (material as MeshStandardMaterial).displacementBias },
+      // flatShading: { value: (material as MeshStandardMaterial).flatShading }
     };
 
-    // TODO: add normal map etc
+    const defines = {};
+    defines['USE_UV'] = '';
 
-    return new ShaderMaterial({
+    const shaderMaterial = new ShaderMaterial({
       uniforms,
+      defines,
       vertexShader,
       fragmentShader,
       glslVersion: GLSL3,
+      transparent: material.transparent,
       side: material.side,
-      // alphaTest: material.alphaTest,
-      transparent: material.transparent
+      alphaTest: material.alphaTest,
+      alphaHash: material.alphaHash,
+      depthFunc: material.depthFunc,
+      depthWrite: material.depthWrite,
+      depthTest: material.depthTest,
+      // polygonOffset: material.polygonOffset,
+      // polygonOffsetFactor: material.polygonOffsetFactor,
+      // polygonOffsetUnits: material.polygonOffsetUnits,
+      blending: material.blending,
+      blendSrc: material.blendSrc,
+      blendDst: material.blendDst,
+      blendEquation: material.blendEquation,
+      blendSrcAlpha: material.blendSrcAlpha,
+      blendDstAlpha: material.blendDstAlpha,
+      blendEquationAlpha: material.blendEquationAlpha,
+      premultipliedAlpha: material.premultipliedAlpha,
+      // dithering: material.dithering,
+      // stencilWrite: material.stencilWrite,
+      // stencilFunc: material.stencilFunc,
+      // stencilRef: material.stencilRef,
+      alphaToCoverage: material.alphaToCoverage,
+      // allowOverride: material.allowOverride,
+      blendAlpha: material.blendAlpha,
+      blendColor: material.blendColor,
+      clipIntersection: material.clipIntersection,
+      clippingPlanes: material.clippingPlanes,
+      // clipShadows: material.clipShadows,
+      colorWrite: material.colorWrite,
+      forceSinglePass: material.forceSinglePass,
+      vertexColors: material.vertexColors,
+      precision: material.precision,
+      name: material.name,
+      // stencilFail: material.stencilFail,
+      // stencilZFail: material.stencilZFail,
+      // stencilZPass: material.stencilZPass,
+      // stencilFuncMask: material.stencilFuncMask,
+      // stencilWriteMask: material.stencilWriteMask,
+      // shadowSide: material.shadowSide,
+      toneMapped: material.toneMapped,
+      visible: material.visible
     });
+
+    shaderMaterial.onBeforeCompile = (shader) => {
+      shader.map = true;
+      shader.normalMap = true;
+      shader.mapUv = 'uv';
+      shader.normalMapUv = 'uv';
+    };
+
+    return shaderMaterial;
   }
 
   function restoreTargetMaterial(target: Object3D): void {
@@ -191,10 +259,11 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
     renderTarget.textures[albedo].minFilter = LinearMipmapLinearFilter;
     renderTarget.textures[albedo].magFilter = LinearFilter;
     renderTarget.textures[albedo].type = UnsignedByteType;
-    renderTarget.textures[albedo].colorSpace = renderer.outputColorSpace;
+    renderTarget.textures[albedo].colorSpace = renderer.outputColorSpace; // should be linearSRGB?
 
     renderTarget.textures[normalDepth].minFilter = NearestMipMapNearestFilter;
     renderTarget.textures[normalDepth].magFilter = NearestFilter;
+    // renderTarget.textures[normalDepth].type = FloatType; // TODO parametric
     renderTarget.textures[normalDepth].type = HalfFloatType; // TODO parametric
     renderTarget.textures[normalDepth].colorSpace = LinearSRGBColorSpace;
 

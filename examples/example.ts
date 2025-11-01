@@ -1,5 +1,5 @@
 import { load, Main, PerspectiveCameraAuto } from '@three.ez/main';
-import { AmbientLight, DirectionalLight, MeshBasicMaterial, MeshStandardMaterial, Scene } from 'three';
+import { AmbientLight, DirectionalLight, MeshStandardMaterial, Scene } from 'three';
 import { GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { OctahedralImpostor } from '../src/core/octahedralImpostor.js';
