@@ -1,7 +1,7 @@
 import { InstancedMesh2 } from '@three.ez/instanced-mesh';
 import { load, Main, PerspectiveCameraAuto } from '@three.ez/main';
 import { simplifyGeometriesByError } from '@three.ez/simplify-geometry';
-import { AmbientLight, Color, DirectionalLight, FogExp2, Material, Mesh, MeshLambertMaterial, RepeatWrapping, Scene, TextureLoader } from 'three';
+import { ACESFilmicToneMapping, AmbientLight, BoxGeometry, CameraHelper, Color, DirectionalLight, DirectionalLightHelper, FogExp2, Material, Mesh, MeshLambertMaterial, PCFSoftShadowMap, RepeatWrapping, Scene, Sphere, SphereGeometry, TextureLoader, Vector3 } from 'three';
 import { GLTFLoader, MapControls } from 'three/examples/jsm/Addons.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { OctahedralImpostor } from '../../src/core/octahedralImpostor.js';
@@ -10,6 +10,11 @@ import { Terrain, TerrainParams } from './terrain.js';
 const camera = new PerspectiveCameraAuto(50, 0.1, 1200).translateY(50);
 const scene = new Scene();
 const main = new Main({ showStats: true, rendererParameters: { antialias: false } }); // init renderer and other stuff
+
+main.renderer.toneMapping = ACESFilmicToneMapping;
+main.renderer.toneMappingExposure = 0.7;
+main.renderer.shadowMap.enabled = true;
+main.renderer.shadowMap.type = PCFSoftShadowMap;
 
 const controls = new MapControls(camera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
@@ -23,10 +28,26 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
 
   scene.background = new Color('cyan');
 
-  const directionalLight = new DirectionalLight('white', 2);
-  const ambientLight = new AmbientLight('white', 1);
+  const directionalLight = new DirectionalLight('white', 1);
+  directionalLight.castShadow = true;
+  directionalLight.shadow.mapSize.set(2048, 2048);
+  directionalLight.shadow.camera.left = -450;
+  directionalLight.shadow.camera.right = 450;
+  directionalLight.shadow.camera.top = 450;
+  directionalLight.shadow.camera.bottom = -450;
+  directionalLight.shadow.camera.far = 5000;
+  directionalLight.shadow.camera.updateProjectionMatrix();
 
-  scene.add(directionalLight, ambientLight);
+  scene.add(directionalLight, directionalLight.target);
+
+  const sunOffset = new Vector3(1, 1, 0).normalize().multiplyScalar(1000);
+  directionalLight.on('animate', (e) => {
+    directionalLight.position.copy(camera.position).add(sunOffset);
+    directionalLight.target.position.copy(camera.position).sub(sunOffset);
+  });
+
+  const ambientLight = new AmbientLight('white', 2);
+  scene.add(ambientLight);
 
   scene.fog = new FogExp2('cyan', 0.0015);
 
@@ -39,8 +60,8 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const options: TerrainParams = {
     maxChunksX: 24,
     maxChunksZ: 24,
-    chunkSize: 256,
-    segments: 64,
+    chunkSize: 128,
+    segments: 56,
     frequency: 0.001,
     amplitude: 150,
     octaves: 4,
@@ -48,9 +69,11 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
     gain: 0.2
   };
 
-  const terrain = new Terrain(new MeshLambertMaterial({ color: 0xaaaaaa, map: grassMap }), options);
+  const terrain = new Terrain(new MeshLambertMaterial({ color: 0x888888, map: grassMap }), options);
   // terrain.renderOrder = 1;
   terrain.renderOrder = -1; // this can be based on camera rotation
+  terrain.receiveShadow = true;
+  terrain.castShadow = true;
 
   for (let x = -(options.maxChunksX / 2); x < (options.maxChunksX / 2); x++) {
     for (let z = -(options.maxChunksZ / 2); z < (options.maxChunksZ / 2); z++) {
@@ -64,12 +87,9 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const mergedGeo = mergeGeometries(mesh.children.map((x) => (x as Mesh).geometry), true);
   const materials = mesh.children.map((x) => (x as Mesh).material as Material);
 
-  const pos = await terrain.generateTrees(1000000);
+  const pos = await terrain.generateTrees(200000);
 
   const iMesh = new InstancedMesh2(mergedGeo, materials, { createEntities: true, renderer: main.renderer, capacity: pos.length });
-
-  // iMesh.sortObjects = true;
-  // iMesh.customSort = createRadixSort(iMesh);
 
   iMesh.addInstances(pos.length, (obj, index) => {
     obj.position.copy(pos[index]);
@@ -83,19 +103,17 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
     useHemiOctahedron: true,
     transparent: false,
     alphaClamp: 0.4,
-    spritesPerSide: 16,
+    spritesPerSide: 12,
     textureSize: 4096,
     baseType: MeshLambertMaterial
   });
-
-  // impostor.material.normalScale.set(-0.5, 0.5);
-  // impostor.material.alphaToCoverage = true;
 
   const LODGeo = await simplifyGeometriesByError(mesh.children.map((x) => (x as Mesh).geometry), [0, 0.01]); // improve
   const mergedGeoLOD = mergeGeometries(LODGeo, true);
 
   iMesh.addLOD(mergedGeoLOD, mesh.children.map((x) => ((x as Mesh).material as Material).clone()), 5);
-  iMesh.addLOD(impostor.geometry, impostor.material, 70);
+  iMesh.addLOD(impostor.geometry, impostor.material, 60);
+  iMesh.addShadowLOD(new BoxGeometry(3, 10, 3));
   iMesh.computeBVH();
 
   scene.add(iMesh);
