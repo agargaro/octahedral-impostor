@@ -1,5 +1,5 @@
 import { load, Main, PerspectiveCameraAuto } from '@three.ez/main';
-import { AmbientLight, DirectionalLight, MeshStandardMaterial, Scene } from 'three';
+import { AmbientLight, DirectionalLight, Mesh, MeshBasicMaterial, MeshNormalMaterial, MeshStandardMaterial, PlaneGeometry, Scene } from 'three';
 import { GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { OctahedralImpostor } from '../src/core/octahedralImpostor.js';
@@ -41,8 +41,8 @@ load(GLTFLoader, 'tree.glb').then((gltf) => {
     target: mesh,
     useHemiOctahedron: true,
     transparent: false,
-    spritesPerSide: 16,
-    textureSize: 4096,
+    spritesPerSide: 2,
+    textureSize: 8192,
     baseType: MeshStandardMaterial
   } as CreateOctahedralImpostor<MeshStandardMaterial>);
   scene.add(impostor);
@@ -50,6 +50,18 @@ load(GLTFLoader, 'tree.glb').then((gltf) => {
   mesh.visible = false;
 
   main.createView({ scene, camera: mainCamera, backgroundColor: 'cyan' });
+
+  mesh.traverse((child) => {
+    if (child instanceof Mesh) {
+      const oldMaterial = (child.material as MeshNormalMaterial);
+      (child.material as MeshNormalMaterial) = new MeshNormalMaterial({
+        normalMap: oldMaterial.normalMap
+      });
+    }
+  });
+
+  const plane = new Mesh(new PlaneGeometry(10, 10), new MeshBasicMaterial({ map: impostor.material.normalMap }));
+  scene.add(plane);
 
   const config = { showImpostor: true };
   const gui = new GUI();

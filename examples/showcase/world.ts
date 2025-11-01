@@ -60,8 +60,8 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const options: TerrainParams = {
     maxChunksX: 24,
     maxChunksZ: 24,
-    chunkSize: 128,
-    segments: 56,
+    chunkSize: 256,
+    segments: 64,
     frequency: 0.001,
     amplitude: 150,
     octaves: 4,
@@ -87,7 +87,7 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
   const mergedGeo = mergeGeometries(mesh.children.map((x) => (x as Mesh).geometry), true);
   const materials = mesh.children.map((x) => (x as Mesh).material as Material);
 
-  const pos = await terrain.generateTrees(200000);
+  const pos = await terrain.generateTrees(1000000);
 
   const iMesh = new InstancedMesh2(mergedGeo, materials, { createEntities: true, renderer: main.renderer, capacity: pos.length });
 

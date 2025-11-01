@@ -136,7 +136,8 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
       // bumpScale: { value: (material as MeshStandardMaterial).bumpScale },
       normalMap: { value: (material as MeshStandardMaterial).normalMap },
       normalMapType: { value: (material as MeshStandardMaterial).normalMapType },
-      normalScale: { value: (material as MeshStandardMaterial).normalScale }
+      normalScale: { value: (material as MeshStandardMaterial).normalScale },
+      normalMapTransform: { value: (material as MeshStandardMaterial).normalMap.matrix }
       // displacementMap: { value: (material as MeshStandardMaterial).displacementMap },
       // displacementScale: { value: (material as MeshStandardMaterial).displacementScale },
       // displacementBias: { value: (material as MeshStandardMaterial).displacementBias },
@@ -178,8 +179,8 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
       // allowOverride: material.allowOverride,
       blendAlpha: material.blendAlpha,
       blendColor: material.blendColor,
-      clipIntersection: material.clipIntersection,
-      clippingPlanes: material.clippingPlanes,
+      // clipIntersection: material.clipIntersection,
+      // clippingPlanes: material.clippingPlanes,
       // clipShadows: material.clipShadows,
       colorWrite: material.colorWrite,
       forceSinglePass: material.forceSinglePass,
@@ -201,6 +202,7 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
       shader.normalMap = true;
       shader.mapUv = 'uv';
       shader.normalMapUv = 'uv';
+      shader.normalMapTangentSpace = true; // only if normalmap
     };
 
     return shaderMaterial;
