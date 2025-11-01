@@ -51,15 +51,6 @@ load(GLTFLoader, 'tree.glb').then((gltf) => {
 
   main.createView({ scene, camera: mainCamera, backgroundColor: 'cyan' });
 
-  mesh.traverse((child) => {
-    if (child instanceof Mesh) {
-      const oldMaterial = (child.material as MeshNormalMaterial);
-      (child.material as MeshNormalMaterial) = new MeshNormalMaterial({
-        normalMap: oldMaterial.normalMap
-      });
-    }
-  });
-
   const plane = new Mesh(new PlaneGeometry(10, 10), new MeshBasicMaterial({ map: impostor.material.normalMap }));
   scene.add(plane);
 
