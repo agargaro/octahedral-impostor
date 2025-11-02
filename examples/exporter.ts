@@ -16,5 +16,5 @@ const { renderTarget } = createTextureAtlas({
   textureSize: 2048
 });
 
-// exportTextureFromRenderTarget(main.renderer, renderTarget, 'albedo', 0);
+exportTextureFromRenderTarget(main.renderer, renderTarget, 'albedo', 0);
 exportTextureFromRenderTarget(main.renderer, renderTarget, 'normalDepth', 1);

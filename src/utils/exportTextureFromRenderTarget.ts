@@ -5,7 +5,7 @@ export function exportTextureFromRenderTarget(renderer: WebGLRenderer, renderTar
   const height = renderTarget.texture.image.height;
   const readBuffer = new Uint8Array(width * height * 4);
 
-  (renderer as any).readRenderTargetPixels(renderTarget, 0, 0, width, height, readBuffer, undefined, textureIndex); // TODO wait new three.js release
+  renderer.readRenderTargetPixels(renderTarget, 0, 0, width, height, readBuffer, undefined, textureIndex);
 
   const canvas = document.createElement('canvas');
   canvas.width = width;

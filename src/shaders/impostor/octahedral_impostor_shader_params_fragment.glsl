@@ -27,9 +27,9 @@ varying vec2 vSpriteUV3;
 
 #ifdef EZ_USE_NORMAL
 vec3 blendNormals(vec2 uv1, vec2 uv2, vec2 uv3) {
-  vec4 normalDepth1 = texture2D(normalMap, uv1); // we're reading twice if parallax enabled
-  vec4 normalDepth2 = texture2D(normalMap, uv2);
-  vec4 normalDepth3 = texture2D(normalMap, uv3);
+  vec3 normalDepth1 = unpackRGBToNormal(texture2D(normalMap, uv1).rgb); // we're reading twice if parallax enabled
+  vec3 normalDepth2 = unpackRGBToNormal(texture2D(normalMap, uv2).rgb);
+  vec3 normalDepth3 = unpackRGBToNormal(texture2D(normalMap, uv3).rgb);
 
   // Fix normal if blended bad
 

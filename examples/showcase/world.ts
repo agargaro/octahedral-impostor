@@ -102,7 +102,7 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
     target: mesh,
     useHemiOctahedron: true,
     transparent: false,
-    alphaClamp: 0.4,
+    alphaClamp: 0.5,
     spritesPerSide: 12,
     textureSize: 4096,
     baseType: MeshLambertMaterial

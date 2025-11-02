@@ -1,5 +1,5 @@
 import { load, Main, PerspectiveCameraAuto } from '@three.ez/main';
-import { AmbientLight, DirectionalLight, Mesh, MeshBasicMaterial, MeshNormalMaterial, MeshStandardMaterial, PlaneGeometry, Scene } from 'three';
+import { AmbientLight, DirectionalLight, LinearSRGBColorSpace, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, Scene } from 'three';
 import { GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { OctahedralImpostor } from '../src/core/octahedralImpostor.js';
@@ -15,11 +15,11 @@ controls.update();
 load(GLTFLoader, 'tree.glb').then((gltf) => {
   const mesh = gltf.scene;
 
-  const directionalLight = new DirectionalLight('white', 3);
+  const directionalLight = new DirectionalLight('white', 10);
   const ambientLight = new AmbientLight('white', 1);
 
   const lightPosition = {
-    azimuth: 0,
+    azimuth: 55,
     elevation: 45,
     update: function () {
       const azRad = this.azimuth * Math.PI / 180;
@@ -41,8 +41,8 @@ load(GLTFLoader, 'tree.glb').then((gltf) => {
     target: mesh,
     useHemiOctahedron: true,
     transparent: false,
-    spritesPerSide: 2,
-    textureSize: 8192,
+    spritesPerSide: 12,
+    textureSize: 4096,
     baseType: MeshStandardMaterial
   } as CreateOctahedralImpostor<MeshStandardMaterial>);
   scene.add(impostor);
@@ -51,8 +51,11 @@ load(GLTFLoader, 'tree.glb').then((gltf) => {
 
   main.createView({ scene, camera: mainCamera, backgroundColor: 'cyan' });
 
-  const plane = new Mesh(new PlaneGeometry(10, 10), new MeshBasicMaterial({ map: impostor.material.normalMap }));
-  scene.add(plane);
+  const plane = new Mesh(new PlaneGeometry(10, 10), new MeshBasicMaterial({ map: impostor.material.normalMap, transparent: true }));
+  scene.add(plane.translateX(-10));
+
+  const plane2 = new Mesh(new PlaneGeometry(10, 10), new MeshBasicMaterial({ map: impostor.material.map, transparent: true }));
+  scene.add(plane2.translateX(10));
 
   const config = { showImpostor: true };
   const gui = new GUI();
@@ -67,4 +70,6 @@ load(GLTFLoader, 'tree.glb').then((gltf) => {
   lightFolder.add(directionalLight, 'intensity', 0, 10, 0.01).name('Intensity');
   lightFolder.add(lightPosition, 'azimuth', -180, 180, 1).name('Azimuth').onChange(() => lightPosition.update());
   lightFolder.add(lightPosition, 'elevation', -90, 90, 1).name('Elevation').onChange(() => lightPosition.update());
+
+  lightPosition.update();
 });

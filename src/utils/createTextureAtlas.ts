@@ -1,4 +1,4 @@
-import { FloatType, GLSL3, IUniform, LinearFilter, LinearMipmapLinearFilter, LinearSRGBColorSpace, Mesh, MeshStandardMaterial, NearestFilter, NearestMipMapNearestFilter, Object3D, OrthographicCamera, ShaderMaterial, Sphere, TangentSpaceNormalMap, Texture, UnsignedByteType, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { GLSL3, IUniform, LinearFilter, LinearMipmapLinearFilter, LinearSRGBColorSpace, Mesh, MeshStandardMaterial, NearestFilter, NearestMipMapNearestFilter, Object3D, OrthographicCamera, ShaderMaterial, Sphere, TangentSpaceNormalMap, Texture, UnsignedByteType, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { computeObjectBoundingSphere } from './computeObjectBoundingSphere.js';
 import { hemiOctaGridToDir, octaGridToDir } from './octahedronUtils.js';
 
@@ -287,11 +287,12 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
     renderTarget.textures[albedo].minFilter = LinearMipmapLinearFilter;
     renderTarget.textures[albedo].magFilter = LinearFilter;
     renderTarget.textures[albedo].type = UnsignedByteType;
-    renderTarget.textures[albedo].colorSpace = renderer.outputColorSpace; // should be linearSRGB?
+    renderTarget.textures[albedo].colorSpace = LinearSRGBColorSpace;
+    // renderTarget.textures[albedo].colorSpace = renderer.outputColorSpace;
 
     renderTarget.textures[normalDepth].minFilter = NearestMipMapNearestFilter;
     renderTarget.textures[normalDepth].magFilter = NearestFilter;
-    renderTarget.textures[normalDepth].type = FloatType;
+    renderTarget.textures[normalDepth].type = UnsignedByteType; // because is packed
     // renderTarget.textures[normalDepth].type = HalfFloatType; // TODO parametric
     renderTarget.textures[normalDepth].colorSpace = LinearSRGBColorSpace;
 
