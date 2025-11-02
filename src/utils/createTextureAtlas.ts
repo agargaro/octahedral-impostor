@@ -1,4 +1,4 @@
-import { GLSL3, HalfFloatType, IUniform, LinearFilter, LinearMipmapLinearFilter, LinearSRGBColorSpace, Material, Mesh, MeshStandardMaterial, NearestFilter, NearestMipMapNearestFilter, Object3D, OrthographicCamera, ShaderMaterial, Sphere, Texture, UnsignedByteType, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { FloatType, GLSL3, IUniform, LinearFilter, LinearMipmapLinearFilter, LinearSRGBColorSpace, Mesh, MeshStandardMaterial, NearestFilter, NearestMipMapNearestFilter, Object3D, OrthographicCamera, ShaderMaterial, Sphere, TangentSpaceNormalMap, Texture, UnsignedByteType, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { computeObjectBoundingSphere } from './computeObjectBoundingSphere.js';
 import { hemiOctaGridToDir, octaGridToDir } from './octahedronUtils.js';
 
@@ -110,7 +110,7 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
   function overrideTargetMaterial(target: Object3D): void {
     target.traverse((mesh) => {
       if ((mesh as Mesh).material) {
-        const material = (mesh as Mesh).material;
+        const material = (mesh as Mesh).material as MeshStandardMaterial | MeshStandardMaterial[];
         mesh.userData[userDataMaterialKey] = material;
         const overrideMaterial = Array.isArray(material) ? material.map((mat) => createMaterial(mat)) : createMaterial(material);
         (mesh as Mesh).material = overrideMaterial;
@@ -118,34 +118,56 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
     });
   }
 
-  function createMaterial(material: Material): ShaderMaterial {
-    const uniforms: { [uniform: string]: IUniform } = {
-      // Basic
-      diffuse: { value: (material as MeshStandardMaterial).color },
-      opacity: { value: material.opacity },
-      map: { value: (material as MeshStandardMaterial).map },
-      mapTransform: { value: (material as MeshStandardMaterial).map.matrix },
-      // lightMap: { value: (material as MeshStandardMaterial).lightMap },
-      // lightMapIntensity: { value: (material as MeshStandardMaterial).lightMapIntensity },
-      // aoMap: { value: (material as MeshStandardMaterial).aoMap },
-      // aoMapIntensity: { value: (material as MeshStandardMaterial).aoMapIntensity },
-      // alphaMap: { value: (material as MeshStandardMaterial).alphaMap },
+  function createMaterial(material: MeshStandardMaterial): ShaderMaterial {
+    const hasMap = !!material.map;
+    const hasAlphaMap = !!material.alphaMap;
+    const hasNormalMap = !!material.normalMap;
+    const hasBumpMap = !!material.bumpMap;
+    const hasDisplacementMap = !!material.displacementMap;
 
-      // Normal
-      // bumpMap: { value: (material as MeshStandardMaterial).bumpMap },
-      // bumpScale: { value: (material as MeshStandardMaterial).bumpScale },
-      normalMap: { value: (material as MeshStandardMaterial).normalMap },
-      normalMapType: { value: (material as MeshStandardMaterial).normalMapType },
-      normalScale: { value: (material as MeshStandardMaterial).normalScale },
-      normalMapTransform: { value: (material as MeshStandardMaterial).normalMap.matrix }
-      // displacementMap: { value: (material as MeshStandardMaterial).displacementMap },
-      // displacementScale: { value: (material as MeshStandardMaterial).displacementScale },
-      // displacementBias: { value: (material as MeshStandardMaterial).displacementBias },
-      // flatShading: { value: (material as MeshStandardMaterial).flatShading }
+    const uniforms: { [uniform: string]: IUniform } = {
+      diffuse: { value: material.color },
+      opacity: { value: material.opacity }
     };
 
+    // From MeshBasicMaterial
+
+    if (hasMap) {
+      uniforms['map'] = { value: material.map };
+      uniforms['mapTransform'] = { value: material.map.matrix };
+    }
+
+    if (hasAlphaMap) {
+      uniforms['alphaMap'] = { value: material.alphaMap };
+      uniforms['alphaMapTransform'] = { value: material.alphaMap.matrix };
+    }
+
+    // From MeshNormalMaterial and MeshDepthMaterial
+
+    if (hasNormalMap) {
+      uniforms['normalMap'] = { value: material.normalMap };
+      uniforms['normalScale'] = { value: material.normalScale };
+      uniforms['normalMapTransform'] = { value: material.normalMap.matrix };
+    }
+
+    if (hasBumpMap) {
+      uniforms['bumpMap'] = { value: material.bumpMap };
+      uniforms['bumpScale'] = { value: material.bumpScale };
+      uniforms['bumpMapTransform'] = { value: material.bumpMap.matrix };
+    }
+
+    if (hasDisplacementMap) {
+      uniforms['displacementMap'] = { value: material.displacementMap };
+      uniforms['displacementScale'] = { value: material.displacementScale };
+      uniforms['displacementBias'] = { value: material.displacementBias };
+      uniforms['displacementMapTransform'] = { value: material.displacementMap.matrix };
+    }
+
     const defines = {};
-    defines['USE_UV'] = '';
+
+    if (hasMap || hasAlphaMap || hasNormalMap || hasBumpMap || hasDisplacementMap) {
+      defines['USE_UV'] = '';
+    }
 
     const shaderMaterial = new ShaderMaterial({
       uniforms,
@@ -160,9 +182,6 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
       depthFunc: material.depthFunc,
       depthWrite: material.depthWrite,
       depthTest: material.depthTest,
-      // polygonOffset: material.polygonOffset,
-      // polygonOffsetFactor: material.polygonOffsetFactor,
-      // polygonOffsetUnits: material.polygonOffsetUnits,
       blending: material.blending,
       blendSrc: material.blendSrc,
       blendDst: material.blendDst,
@@ -171,38 +190,45 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
       blendDstAlpha: material.blendDstAlpha,
       blendEquationAlpha: material.blendEquationAlpha,
       premultipliedAlpha: material.premultipliedAlpha,
-      // dithering: material.dithering,
-      // stencilWrite: material.stencilWrite,
-      // stencilFunc: material.stencilFunc,
-      // stencilRef: material.stencilRef,
       alphaToCoverage: material.alphaToCoverage,
-      // allowOverride: material.allowOverride,
       blendAlpha: material.blendAlpha,
       blendColor: material.blendColor,
-      // clipIntersection: material.clipIntersection,
-      // clippingPlanes: material.clippingPlanes,
-      // clipShadows: material.clipShadows,
       colorWrite: material.colorWrite,
       forceSinglePass: material.forceSinglePass,
       vertexColors: material.vertexColors,
       precision: material.precision,
-      name: material.name,
-      // stencilFail: material.stencilFail,
-      // stencilZFail: material.stencilZFail,
-      // stencilZPass: material.stencilZPass,
-      // stencilFuncMask: material.stencilFuncMask,
-      // stencilWriteMask: material.stencilWriteMask,
-      // shadowSide: material.shadowSide,
-      toneMapped: material.toneMapped,
+      // toneMapped: material.toneMapped,
       visible: material.visible
     });
 
     shaderMaterial.onBeforeCompile = (shader) => {
-      shader.map = true;
-      shader.normalMap = true;
-      shader.mapUv = 'uv';
-      shader.normalMapUv = 'uv';
-      shader.normalMapTangentSpace = true; // only if normalmap
+      if (hasMap) {
+        shader.map = true;
+        shader.mapUv = 'uv';
+      }
+
+      if (hasAlphaMap) {
+        shader.alphaMap = true;
+        shader.alphaMapUv = 'uv';
+      }
+
+      if (hasNormalMap) {
+        shader.normalMap = true;
+        shader.normalMapUv = 'uv';
+        shader.normalMapTangentSpace = material.normalMapType === TangentSpaceNormalMap;
+      }
+
+      if (hasBumpMap) {
+        shader.bumpMap = true;
+        shader.bumpMapUv = 'uv';
+      }
+
+      if (hasDisplacementMap) {
+        shader.displacementMap = true;
+        shader.displacementMapUv = 'uv';
+      }
+
+      shader.flatShading = material.flatShading;
     };
 
     return shaderMaterial;
@@ -265,8 +291,8 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
 
     renderTarget.textures[normalDepth].minFilter = NearestMipMapNearestFilter;
     renderTarget.textures[normalDepth].magFilter = NearestFilter;
-    // renderTarget.textures[normalDepth].type = FloatType; // TODO parametric
-    renderTarget.textures[normalDepth].type = HalfFloatType; // TODO parametric
+    renderTarget.textures[normalDepth].type = FloatType;
+    // renderTarget.textures[normalDepth].type = HalfFloatType; // TODO parametric
     renderTarget.textures[normalDepth].colorSpace = LinearSRGBColorSpace;
 
     renderer.setRenderTarget(renderTarget);
