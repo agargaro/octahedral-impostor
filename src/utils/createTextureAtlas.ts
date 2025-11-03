@@ -1,4 +1,4 @@
-import { GLSL3, IUniform, LinearFilter, LinearMipmapLinearFilter, LinearSRGBColorSpace, Mesh, MeshStandardMaterial, NearestFilter, NearestMipMapNearestFilter, Object3D, OrthographicCamera, ShaderMaterial, Sphere, TangentSpaceNormalMap, Texture, UnsignedByteType, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { GLSL3, IUniform, LinearFilter, LinearMipmapLinearFilter, LinearSRGBColorSpace, Mesh, MeshStandardMaterial, NearestFilter, NearestMipMapNearestFilter, Object3D, ObjectSpaceNormalMap, OrthographicCamera, ShaderMaterial, Sphere, TangentSpaceNormalMap, Texture, UnsignedByteType, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { computeObjectBoundingSphere } from './computeObjectBoundingSphere.js';
 import { hemiOctaGridToDir, octaGridToDir } from './octahedronUtils.js';
 
@@ -201,7 +201,6 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
       forceSinglePass: material.forceSinglePass,
       vertexColors: material.vertexColors,
       precision: material.precision,
-      // toneMapped: material.toneMapped,
       visible: material.visible
     });
 
@@ -220,6 +219,7 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
         shader.normalMap = true;
         shader.normalMapUv = 'uv';
         shader.normalMapTangentSpace = material.normalMapType === TangentSpaceNormalMap;
+        shader.normalMapObjectSpace = material.normalMapType === ObjectSpaceNormalMap;
       }
 
       if (hasBumpMap) {

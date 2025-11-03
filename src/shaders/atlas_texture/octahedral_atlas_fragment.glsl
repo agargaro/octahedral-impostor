@@ -28,19 +28,18 @@ void main() {
 	#include <alphatest_fragment>
 	#include <alphahash_fragment>
 
-	// // // #include <opaque_fragment>
-    // #ifdef OPAQUE
-	// diffuseColor.a = 1.0;
-	// #endif
-	// #ifdef USE_TRANSMISSION
-	// diffuseColor.a *= material.transmissionAlpha;
-	// #endif
-	gAlbedo = diffuseColor;
+	if (diffuseColor.a <= 0.2) { // TODO custom code
+		discard;
+	}
 
-	// // // #include <tonemapping_fragment>
-    // #if defined( TONE_MAPPING )
-	// 	gAlbedo.rgb = toneMapping( gl_FragColor.rgb );
-	// #endif
+	// #include <opaque_fragment>
+    #ifdef OPAQUE
+		diffuseColor.a = 1.0;
+	#endif
+	#ifdef USE_TRANSMISSION
+		diffuseColor.a *= material.transmissionAlpha;
+	#endif
+	gAlbedo = diffuseColor;
 
 	// // #include <colorspace_fragment>
 	gAlbedo = linearToOutputTexel( gAlbedo );
@@ -50,13 +49,9 @@ void main() {
 		gAlbedo.rgb *= gAlbedo.a;
 	#endif
 
-	if (diffuseColor.a > 0.0) {
-		#include <normal_fragment_begin>
-		#include <normal_fragment_maps>
+	#include <normal_fragment_begin>
+	#include <normal_fragment_maps>
 
-		float fragCoordZ = 0.5 * vHighPrecisionZW[ 0 ] / vHighPrecisionZW[ 1 ] + 0.5;
-		 gNormalDepth = vec4( packNormalToRGB( normal ), 1.0 - fragCoordZ );
-	} else {
-		gNormalDepth = vec4( 0.0 );
-	}
+	float fragCoordZ = 0.5 * vHighPrecisionZW[ 0 ] / vHighPrecisionZW[ 1 ] + 0.5;
+	gNormalDepth = vec4( packNormalToRGB( normal ), 1.0 - fragCoordZ );
 }

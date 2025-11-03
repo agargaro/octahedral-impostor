@@ -1,18 +1,20 @@
-import { load, Main, PerspectiveCameraAuto } from '@three.ez/main';
+import { load, Main, OrthographicCameraAuto } from '@three.ez/main';
 import { AmbientLight, DirectionalLight, LinearSRGBColorSpace, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, Scene } from 'three';
 import { GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { OctahedralImpostor } from '../src/core/octahedralImpostor.js';
 import { CreateOctahedralImpostor } from '../src/core/octahedralImpostorMaterial.js';
 
-const mainCamera = new PerspectiveCameraAuto(20).translateZ(100);
+const mainCamera = new OrthographicCameraAuto(20).translateZ(100);
 const scene = new Scene();
 const main = new Main(); // init renderer and other stuff
 const controls = new OrbitControls(mainCamera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
 controls.update();
 
-load(GLTFLoader, 'tree.glb').then((gltf) => {
+main.renderer.outputColorSpace = LinearSRGBColorSpace;
+
+load(GLTFLoader, 'Pine_5.gltf').then((gltf) => {
   const mesh = gltf.scene;
 
   const directionalLight = new DirectionalLight('white', 10);
@@ -42,7 +44,7 @@ load(GLTFLoader, 'tree.glb').then((gltf) => {
     useHemiOctahedron: true,
     transparent: false,
     spritesPerSide: 12,
-    textureSize: 4096,
+    textureSize: 8192,
     baseType: MeshStandardMaterial
   } as CreateOctahedralImpostor<MeshStandardMaterial>);
   scene.add(impostor);
@@ -51,11 +53,11 @@ load(GLTFLoader, 'tree.glb').then((gltf) => {
 
   main.createView({ scene, camera: mainCamera, backgroundColor: 'cyan' });
 
-  const plane = new Mesh(new PlaneGeometry(10, 10), new MeshBasicMaterial({ map: impostor.material.normalMap, transparent: true }));
-  scene.add(plane.translateX(-10));
+  // const plane = new Mesh(new PlaneGeometry(15, 15), new MeshBasicMaterial({ map: impostor.material.normalMap, transparent: true }));
+  // scene.add(plane.translateX(-10));
 
-  const plane2 = new Mesh(new PlaneGeometry(10, 10), new MeshBasicMaterial({ map: impostor.material.map, transparent: true }));
-  scene.add(plane2.translateX(10));
+  // const plane2 = new Mesh(new PlaneGeometry(15, 15), new MeshBasicMaterial({ map: impostor.material.map, transparent: true }));
+  // scene.add(plane2.translateX(10));
 
   const config = { showImpostor: true };
   const gui = new GUI();
@@ -72,4 +74,40 @@ load(GLTFLoader, 'tree.glb').then((gltf) => {
   lightFolder.add(lightPosition, 'elevation', -90, 90, 1).name('Elevation').onChange(() => lightPosition.update());
 
   lightPosition.update();
+
+  // mesh.traverse((mesh) => {
+  //   if ((mesh as Mesh).material) {
+  //     const material = (mesh as Mesh).material as MeshStandardMaterial;
+  //     (mesh as Mesh).material = new MeshNormalMaterial(
+  //       {
+  //         side: material.side,
+  //         transparent: material.transparent,
+  //         alphaTest: material.alphaTest,
+  //         normalMap: material.normalMap,
+  //         normalMapType: material.normalMapType,
+  //         normalScale: material.normalScale
+  //       });
+  //   }
+  // });
+
+  // mesh.traverse((mesh) => {
+  //   if ((mesh as Mesh).material) {
+  //     const material = (mesh as Mesh).material as MeshStandardMaterial;
+  //     console.log(material.toJSON());
+  //     (mesh as Mesh).material = new MeshBasicMaterial(
+  //       {
+  //         map: material.map,
+  //         side: material.side,
+  //         transparent: material.transparent,
+  //         alphaTest: material.alphaTest,
+  //         vertexColors: material.vertexColors,
+  //         depthWrite: material.depthWrite,
+  //         depthTest: material.depthTest,
+  //         depthFunc: material.depthFunc,
+  //         precision: material.precision,
+  //         color: material.color,
+  //         blendColor: material.blendColor
+  //       });
+  //   }
+  // });
 });

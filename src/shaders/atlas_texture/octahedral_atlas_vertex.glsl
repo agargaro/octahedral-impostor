@@ -24,11 +24,16 @@ void main() {
 // 	#include <skinbase_vertex>
 // 	#include <skinnormal_vertex>
 	#include <defaultnormal_vertex>
-    #include <normal_vertex> 
+    #include <normal_vertex>
 	#include <begin_vertex>
 // 	#include <morphtarget_vertex>
 // 	#include <skinning_vertex>
     #include <displacementmap_vertex>
 	#include <project_vertex>
+	
     vHighPrecisionZW = gl_Position.zw;
+
+#if defined( FLAT_SHADED ) || defined( USE_BUMPMAP ) || defined( USE_NORMALMAP_TANGENTSPACE )
+	vViewPosition = - mvPosition.xyz;
+#endif
 }
