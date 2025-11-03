@@ -1,5 +1,5 @@
 import { load, Main, OrthographicCameraAuto } from '@three.ez/main';
-import { AmbientLight, DirectionalLight, LinearSRGBColorSpace, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, Scene } from 'three';
+import { AmbientLight, DirectionalLight, LinearSRGBColorSpace, MeshStandardMaterial, Scene } from 'three';
 import { GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import { OctahedralImpostor } from '../src/core/octahedralImpostor.js';
@@ -38,6 +38,9 @@ load(GLTFLoader, 'Pine_5.gltf').then((gltf) => {
 
   scene.add(mesh, directionalLight, ambientLight);
 
+  mesh.children[0].children[0].renderOrder = 2; // mmm...
+  mesh.children[0].children[1].renderOrder = 1;
+
   const impostor = new OctahedralImpostor({
     renderer: main.renderer,
     target: mesh,
@@ -74,40 +77,4 @@ load(GLTFLoader, 'Pine_5.gltf').then((gltf) => {
   lightFolder.add(lightPosition, 'elevation', -90, 90, 1).name('Elevation').onChange(() => lightPosition.update());
 
   lightPosition.update();
-
-  // mesh.traverse((mesh) => {
-  //   if ((mesh as Mesh).material) {
-  //     const material = (mesh as Mesh).material as MeshStandardMaterial;
-  //     (mesh as Mesh).material = new MeshNormalMaterial(
-  //       {
-  //         side: material.side,
-  //         transparent: material.transparent,
-  //         alphaTest: material.alphaTest,
-  //         normalMap: material.normalMap,
-  //         normalMapType: material.normalMapType,
-  //         normalScale: material.normalScale
-  //       });
-  //   }
-  // });
-
-  // mesh.traverse((mesh) => {
-  //   if ((mesh as Mesh).material) {
-  //     const material = (mesh as Mesh).material as MeshStandardMaterial;
-  //     console.log(material.toJSON());
-  //     (mesh as Mesh).material = new MeshBasicMaterial(
-  //       {
-  //         map: material.map,
-  //         side: material.side,
-  //         transparent: material.transparent,
-  //         alphaTest: material.alphaTest,
-  //         vertexColors: material.vertexColors,
-  //         depthWrite: material.depthWrite,
-  //         depthTest: material.depthTest,
-  //         depthFunc: material.depthFunc,
-  //         precision: material.precision,
-  //         color: material.color,
-  //         blendColor: material.blendColor
-  //       });
-  //   }
-  // });
 });

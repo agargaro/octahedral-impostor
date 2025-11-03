@@ -1,7 +1,7 @@
 import { InstancedMesh2 } from '@three.ez/instanced-mesh';
 import { load, Main, PerspectiveCameraAuto } from '@three.ez/main';
 import { simplifyGeometriesByError } from '@three.ez/simplify-geometry';
-import { ACESFilmicToneMapping, AmbientLight, BoxGeometry, Color, DirectionalLight, FogExp2, Material, Mesh, MeshLambertMaterial, PCFSoftShadowMap, RepeatWrapping, Scene, TextureLoader, Vector3 } from 'three';
+import { ACESFilmicToneMapping, AmbientLight, BoxGeometry, Color, DirectionalLight, FogExp2, Material, Mesh, MeshStandardMaterial, PCFSoftShadowMap, RepeatWrapping, Scene, TextureLoader, Vector3 } from 'three';
 import { GLTFLoader, MapControls } from 'three/examples/jsm/Addons.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { OctahedralImpostor } from '../../src/core/octahedralImpostor.js';
@@ -18,17 +18,19 @@ main.renderer.shadowMap.type = PCFSoftShadowMap;
 
 const controls = new MapControls(camera, main.renderer.domElement);
 controls.maxPolarAngle = Math.PI / 2;
-controls.target.set(500, 0, 0);
+controls.target.set(100, 0, 0);
 controls.update();
 
 main.renderer.setPixelRatio(Math.min(1.25, window.devicePixelRatio));
 
-load(GLTFLoader, 'tree.glb').then(async (gltf) => {
-  const mesh = gltf.scene;
+load(GLTFLoader, 'Pine_5.gltf').then(async (gltf) => {
+  const treeGroup = gltf.scene.children[0];
+  treeGroup.children[0].renderOrder = 2; // mmm why we need this to fix normal baking?
+  treeGroup.children[1].renderOrder = 1;
 
   scene.background = new Color('cyan');
 
-  const directionalLight = new DirectionalLight('white', 1);
+  const directionalLight = new DirectionalLight('white', 1.5);
   directionalLight.castShadow = true;
   directionalLight.shadow.mapSize.set(2048, 2048);
   directionalLight.shadow.camera.left = -450;
@@ -58,10 +60,10 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
   grassMap.repeat.set(50, 50);
 
   const options: TerrainParams = {
-    maxChunksX: 12,
-    maxChunksZ: 12,
-    chunkSize: 256,
-    segments: 96,
+    maxChunksX: 24,
+    maxChunksZ: 24,
+    chunkSize: 128,
+    segments: 56,
     frequency: 0.001,
     amplitude: 150,
     octaves: 4,
@@ -69,8 +71,7 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
     gain: 0.2
   };
 
-  const terrain = new Terrain(new MeshLambertMaterial({ color: 0x888888, map: grassMap }), options);
-  // terrain.renderOrder = 1;
+  const terrain = new Terrain(new MeshStandardMaterial({ color: 0x888888, map: grassMap }), options);
   terrain.renderOrder = -1; // this can be based on camera rotation
   terrain.receiveShadow = true;
   terrain.castShadow = true;
@@ -84,10 +85,10 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
 
   // TREES AND IMPOSTORS
 
-  const mergedGeo = mergeGeometries(mesh.children.map((x) => (x as Mesh).geometry), true);
-  const materials = mesh.children.map((x) => (x as Mesh).material as Material);
+  const mergedGeo = mergeGeometries(treeGroup.children.map((x) => (x as Mesh).geometry), true);
+  const materials = treeGroup.children.map((x) => (x as Mesh).material as Material);
 
-  const pos = await terrain.generateTrees(300000);
+  const pos = await terrain.generateTrees(200_000);
 
   const iMesh = new InstancedMesh2(mergedGeo, materials, { createEntities: true, renderer: main.renderer, capacity: pos.length });
 
@@ -99,19 +100,19 @@ load(GLTFLoader, 'tree.glb').then(async (gltf) => {
 
   const impostor = new OctahedralImpostor({
     renderer: main.renderer,
-    target: mesh,
+    target: treeGroup,
     useHemiOctahedron: true,
     transparent: false,
     alphaClamp: 0.5,
-    spritesPerSide: 12,
+    spritesPerSide: 24,
     textureSize: 4096,
-    baseType: MeshLambertMaterial
+    baseType: MeshStandardMaterial
   });
 
-  const LODGeo = await simplifyGeometriesByError(mesh.children.map((x) => (x as Mesh).geometry), [0, 0.01]); // improve
+  const LODGeo = await simplifyGeometriesByError(treeGroup.children.map((x) => (x as Mesh).geometry), 0.05); // improve
   const mergedGeoLOD = mergeGeometries(LODGeo, true);
 
-  iMesh.addLOD(mergedGeoLOD, mesh.children.map((x) => ((x as Mesh).material as Material).clone()), 5);
+  iMesh.addLOD(mergedGeoLOD, treeGroup.children.map((x) => ((x as Mesh).material as Material).clone()), 10);
   iMesh.addLOD(impostor.geometry, impostor.material, 50);
   iMesh.addShadowLOD(new BoxGeometry(3, 10, 3));
   iMesh.computeBVH();

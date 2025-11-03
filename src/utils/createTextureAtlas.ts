@@ -111,7 +111,7 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
     target.traverse((mesh) => {
       if ((mesh as Mesh).material) {
         const material = (mesh as Mesh).material as MeshStandardMaterial | MeshStandardMaterial[];
-        mesh.userData[userDataMaterialKey] = material;
+        mesh.userData[userDataMaterialKey] = material; // TODO use map instead
         const overrideMaterial = Array.isArray(material) ? material.map((mat) => createMaterial(mat)) : createMaterial(material);
         (mesh as Mesh).material = overrideMaterial;
       }
