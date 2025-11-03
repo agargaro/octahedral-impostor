@@ -124,6 +124,7 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
     const hasNormalMap = !!material.normalMap;
     const hasBumpMap = !!material.bumpMap;
     const hasDisplacementMap = !!material.displacementMap;
+    const hasAlphaTest = material.alphaTest > 0;
 
     const uniforms: { [uniform: string]: IUniform } = {
       diffuse: { value: material.color },
@@ -131,6 +132,10 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
     };
 
     // From MeshBasicMaterial
+
+    if (hasAlphaTest) {
+      uniforms['alphaTest'] = { value: material.alphaTest };
+    }
 
     if (hasMap) {
       uniforms['map'] = { value: material.map };
@@ -177,7 +182,6 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
       glslVersion: GLSL3,
       transparent: material.transparent,
       side: material.side,
-      alphaTest: material.alphaTest,
       alphaHash: material.alphaHash,
       depthFunc: material.depthFunc,
       depthWrite: material.depthWrite,
@@ -229,6 +233,7 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
       }
 
       shader.flatShading = material.flatShading;
+      shader.alphaTest = hasAlphaTest;
     };
 
     return shaderMaterial;

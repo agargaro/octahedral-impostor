@@ -1,6 +1,6 @@
 #include <clipping_planes_pars_vertex>
 
-uniform mat4 transform; // TODO optimize
+uniform mat4 impostorTransform;
 uniform float spritesPerSide;
 
 flat varying vec4 vSpritesWeight;

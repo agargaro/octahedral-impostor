@@ -3,11 +3,10 @@
 vec2 spritesMinusOne = vec2(spritesPerSide - 1.0);
 
 #if defined USE_INSTANCING || defined USE_INSTANCING_INDIRECT
-mat4 instanceMatrix2 = instanceMatrix * transform; // find a way to remove transform matrix
-
-vec3 cameraPosLocal = (inverse(instanceMatrix2 * modelMatrix) * vec4(cameraPosition, 1.0)).xyz;
+mat4 transformedInstanceMatrix = instanceMatrix * impostorTransform;
+vec3 cameraPosLocal = (inverse(transformedInstanceMatrix * modelMatrix) * vec4(cameraPosition, 1.0)).xyz;
 #else
-vec3 cameraPosLocal = (inverse(modelMatrix) * vec4(cameraPosition, 1.0)).xyz;
+vec3 cameraPosLocal = (inverse(impostorTransform * modelMatrix) * vec4(cameraPosition, 1.0)).xyz;
 #endif
 
 vec3 cameraDir = normalize(cameraPosLocal);
@@ -52,7 +51,9 @@ vSpriteUV3 = projectToPlaneUV(spriteNormal3, planeX3, planeY3, cameraPosLocal, v
 vec4 mvPosition = vec4(projectedVertex, 1.0);
 
 #if defined USE_INSTANCING || defined USE_INSTANCING_INDIRECT
-    mvPosition = instanceMatrix2 * mvPosition;
+    mvPosition = transformedInstanceMatrix * mvPosition;
+# else
+    mvPosition = impostorTransform * mvPosition;
 #endif
 
 mvPosition = modelViewMatrix * mvPosition;
